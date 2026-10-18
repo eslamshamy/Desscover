@@ -1,0 +1,13 @@
+[
+ "00-setup.js",
+ "00-i18n.js",
+ "01-renderer.js",
+ "02-textures.js",
+ "03-materials.js",
+ "04-kit.js",
+ "05-world.js",
+ "06-buildings-shared.js",
+ "07-map.js",
+ "08-app.js",
+ "09-features.js"
+]

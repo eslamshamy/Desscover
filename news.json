@@ -1,0 +1,49 @@
+{
+  "stamp": "Collected on 13 October 2026.",
+  "items": [
+    {
+      "d": "23 Sep 2026",
+      "id": "lp",
+      "title": "Lonely Planet picks Dessau for 2027",
+      "text": "Lonely Planet’s Best in Travel 2027 names Dessau among its 25 places to visit, the only German destination on the list. It singles out the Bauhaus building, the Masters’ Houses and the Törten housing estate.",
+      "src": "Euronews",
+      "url": "https://www.euronews.com/2026/09/23/where-to-travel-in-europe-in-2027-lonely-planet-reveals-its-best-destinations-and-experien",
+      "lm": "bauhaus"
+    },
+    {
+      "d": "4–5 Dec 2026",
+      "id": "bh100",
+      "title": "100 years of the Bauhaus building",
+      "text": "The Bauhaus building opened on 4 December 1926. The Stiftung Bauhaus Dessau marks the centenary with “Projections | Promises | Echo” at the building on 4 and 5 December, closing two years of jubilee events.",
+      "src": "Stiftung Bauhaus Dessau",
+      "url": "https://bauhaus-dessau.de/en/welcome/",
+      "lm": "bauhaus"
+    },
+    {
+      "d": "until 10 Jan 2027",
+      "id": "gbm",
+      "title": "Exhibition: Glas | Beton | Metall",
+      "text": "In the historic workshop wing, an exhibition looks at the industrial materials the Bauhaus building is made of, which Gropius saw replacing traditional ones.",
+      "src": "Deutsche Bahn regional travel tips",
+      "url": "https://regional.bahn.de/regionen/sachsen-anhalt/ausflugstipps/kultur/dessau",
+      "lm": "bauhaus"
+    },
+    {
+      "d": "7 Oct 2026",
+      "id": "eco",
+      "title": "City environmental prize for a kindergarten",
+      "text": "This year’s environmental prize of Dessau-Roßlau focused on species diversity in kindergartens. Five childcare centres were honoured at the zoo, and the prize went to the Kita “Buratino”.",
+      "src": "City of Dessau-Roßlau",
+      "url": "https://verwaltung.dessau-rosslau.de/startseite.html"
+    },
+    {
+      "d": "6 Oct 2026",
+      "id": "rh125",
+      "title": "The Rathaus in another 125 years",
+      "text": "For the town hall’s 125th birthday, the city asked children how it might look 125 years from now. A ten-year-old won the drawing competition.",
+      "src": "City of Dessau-Roßlau",
+      "url": "https://verwaltung.dessau-rosslau.de/startseite.html",
+      "lm": "rathaus"
+    }
+  ]
+}
