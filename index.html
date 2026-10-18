@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>DESSCOVER online: explore the landmarks of Dessau</title>
+<meta name="description" content="DESSCOVER online: a map of Dessau with twenty-six landmarks. Open each one as a 3D model, walk around it in the real Dessau sunlight and click to discover its history.">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<script>
+if (location.protocol === 'file:' && !/(?:^|\/)dist\/index\.html$/.test(location.pathname)) {
+  location.replace(new URL('./dist/index.html', location.href));
+}
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./src/style.css">
+</head>
+<body>
+<div id="veil" role="status"><div class="mark" aria-hidden="true"><i class="m1"></i><i class="m2"></i><i class="m3"></i></div><p id="veilText">Unfolding the map&hellip;</p></div>
+<div id="app">
+  <div id="stage"></div>
+  <div id="labels"></div>
+  <div id="markers"></div>
+  <div id="people" hidden></div>
+
+  <!-- map mode -->
+  <section class="ui panel intro" id="intro" aria-label="Introduction">
+    <div class="mark" aria-hidden="true"><i class="m1"></i><i class="m2"></i><i class="m3"></i></div>
+    <h1>DESSCOVER <span class="h1sub">online</span></h1>
+    <p class="tagline">Welcome to Dessau.</p>
+    <button class="lpBadge" type="button" id="lpBadge" title="Read about it in the news section"><span class="lpTop">Best in Travel 2027</span><span class="lpBot">Lonely Planet · one of 25 places to visit</span></button>
+    <p>Twenty-six landmarks, from a Renaissance palace wing to two shopping centres, across the city and out to Wörlitz. Choose one on the map to open it in 3D, then click around it to uncover its history. Zoom out to see Mosigkau and Wörlitz.</p>
+    <p class="prog" id="progressLine"></p>
+    <p class="prog" id="noteCount"></p>
+    <div class="row">
+      <button class="btn" type="button" id="trailBtn">Walk the Bauhaus trail</button>
+      <button class="btn ghost" type="button" id="certBtn">Certificate</button>
+      <button class="btn ghost" type="button" id="noteBtn" hidden title="Pin a memory or photo to a spot on the map, visible to everyone with the link">Pin a note</button>
+      <button class="btn ghost" type="button" id="resetProg">Reset</button>
+    </div>
+    <div class="row">
+      <button class="btn ghost" type="button" id="newsBtn" aria-pressed="false">City news</button>
+      <button class="btn ghost" type="button" id="aboutBtn" aria-pressed="false">About</button>
+    </div>
+  </section>
+  <section class="ui panel infoPanel" id="newsPanel" hidden aria-label="News about Dessau">
+    <h2>News from Dessau</h2>
+    <p class="muted" id="newsStamp"></p>
+    <ol class="newsList" id="newsList"></ol>
+    <div class="row"><button class="btn" type="button" id="newsClose">Close</button></div>
+  </section>
+  <section class="ui panel infoPanel" id="aboutPanel" hidden aria-label="About this project">
+    <h2>About</h2>
+    <p><b>DESSCOVER online</b> is developed by <b>Eslam ElShamy</b>, an architect and designer based in Dessau.</p>
+    <p>It brings the city's landmarks together on one map, as 3D models you can explore across time, walk through and redesign, with stories drawn from the sources cited on every card. The models are reconstructions from published dimensions, photographs and descriptions, so some details are approximate.</p>
+    <div class="row" id="aboutLinks"></div>
+    <p class="muted">Built with three.js. Base map: © OpenStreetMap contributors (ODbL). Models drawn for this project.</p>
+    <div class="row"><button class="btn" type="button" id="aboutClose">Close</button></div>
+  </section>
+  <nav class="ui panel lmlist" id="lmlist" aria-label="Landmarks"><p class="lbl">landmarks</p><div id="lmButtons"></div></nav>
+  <button type="button" id="compass" title="Compass: click to face north" aria-label="Compass, click to turn the view to face north"><span class="rose" id="compassRose"><span class="cn">N</span><i class="nN"></i><i class="nS"></i></span></button>
+
+  <!-- building mode -->
+  <section class="ui panel bhead" id="bhead" hidden aria-label="Building">
+    <button class="btn ghost back" type="button" id="backBtn">&larr; Back to the map</button>
+    <h2 id="bName"></h2>
+    <div class="meta" id="bMeta"></div>
+    <div class="erabar" id="eraBar" role="group" aria-label="Moments in time"></div>
+    <p class="eranote" id="eraNote"></p>
+  </section>
+  <aside class="ui panel bpanel" id="bpanel" hidden aria-label="Facts">
+    <p class="lead" id="bLead"></p>
+    <div class="toolsRow">
+      <button type="button" id="buildBtn" aria-pressed="false">Build it</button>
+      <button type="button" id="walkBtn" aria-pressed="false">Walk around</button>
+      <button type="button" id="peopleBtn" aria-pressed="false">Who lived here</button>
+      <button type="button" id="dressBtn" aria-pressed="false">Redesign</button>
+      <button type="button" id="byoBtn" aria-pressed="false" hidden>Build your own</button>
+    </div>
+    <button class="btn" type="button" id="quizBtn">Quiz</button>
+    <p class="lbl">famous views</p>
+    <div class="chips" id="viewChips"></div>
+    <p class="lbl">stories, click a number</p>
+    <ol class="facts" id="factList"></ol>
+    <div class="sec">
+      <p class="lbl">daylight in dessau</p>
+      <div class="seg" role="group" aria-label="Date">
+        <button type="button" data-date="dec">4 Dec</button>
+        <button type="button" data-date="mar">21 Mar</button>
+        <button type="button" data-date="jun">21 Jun</button>
+      </div>
+      <div class="timeRow"><span id="dateNote"></span><b id="timeLabel">13:30</b></div>
+      <input id="timeSlider" type="range" min="0" max="24" step="0.05" value="13.5" aria-label="Time of day">
+      <div class="quick" id="quick"></div>
+    </div>
+  </aside>
+  <article class="ui panel card" id="card" hidden aria-live="polite">
+    <div class="top"><div class="n" id="cNum">1</div><h3 id="cTitle"></h3><span class="yr" id="cYear"></span></div>
+    <p id="cText"></p>
+    <div class="src" id="cSrc"></div>
+    <div class="nav">
+      <button class="btn ghost" type="button" id="prevFact">&larr; Previous</button>
+      <button class="btn ghost" type="button" id="nextFact">Next &rarr;</button>
+      <span class="sp"></span>
+      <button class="btn ghost" type="button" id="closeCard">Close</button>
+    </div>
+  </article>
+</div>
+<div class="ui toolbar" id="toolbar">
+  <button class="btn ghost" type="button" id="layoutBtn" title="Put every panel back in its place and open it">Reset panels</button>
+  <button class="btn ghost" type="button" id="postcardBtn">Postcard</button>
+</div>
+<div class="ui panel" id="toast" hidden role="status"><span id="toastText"></span><button class="btn" type="button" id="toastBtn" hidden></button></div>
+<div class="ui panel" id="walkHud" hidden>
+  <b>Walking</b>
+  <span>W A S D or the arrow keys to move, drag to look around, Q and E to turn, hold Shift to hurry.</span>
+  <div class="pad" id="walkPad" aria-label="Movement">
+    <button type="button" data-code="KeyQ" aria-label="Turn left">&#8634;</button><button type="button" data-code="KeyW" aria-label="Forward">&uarr;</button><button type="button" data-code="KeyE" aria-label="Turn right">&#8635;</button>
+    <button type="button" data-code="KeyA" aria-label="Step left">&larr;</button><button type="button" data-code="KeyS" aria-label="Back">&darr;</button><button type="button" data-code="KeyD" aria-label="Step right">&rarr;</button>
+  </div>
+  <button class="btn" type="button" id="walkExit">Stop walking</button>
+</div>
+<div class="ui panel" id="dressTray" hidden>
+  <div class="dtop"><b id="dressSel"></b><button class="btn ghost" type="button" id="dressReset">Reset</button><button class="btn" type="button" id="dressClose">Done</button></div>
+  <div class="swatches" id="swatches"></div>
+</div>
+<div class="ui panel" id="byoTray" hidden>
+  <div class="dtop"><b id="byoSel"></b><button class="btn ghost" type="button" id="byoUndo">Undo</button><button class="btn ghost" type="button" id="byoClear">Clear</button><button class="btn ghost" type="button" id="byoCard">Postcard</button><button class="btn" type="button" id="byoClose">Done</button></div>
+  <div class="byoRow"><span class="lbl">block</span><div class="seg byoSizes" id="byoSizes" role="group" aria-label="Block"></div><button class="btn ghost" type="button" id="byoRot" aria-pressed="false" title="Turn the block (R)">Rotate</button><button class="btn ghost" type="button" id="byoErase" aria-pressed="false" title="Or hold Shift while clicking">Remove</button></div>
+  <div class="byoRow"><span class="lbl">colour</span><div class="byoCols" id="byoCols" role="group" aria-label="Colour"></div></div>
+</div>
+<div id="notePins"></div>
+<div id="modalBack" hidden><div class="modal panel" role="dialog" aria-modal="true" aria-labelledby="mTitle"><h3 id="mTitle"></h3><div id="mBody"></div><div class="mActions" id="mActions"></div></div></div>
+<div id="tip"></div>
+<script>
+window.__bootTimer=setTimeout(function(){ if(!window.__started){ var v=document.getElementById('veilText'); if(v) v.textContent='The app did not start. Run locally with npm start, or deploy the built dist/ folder.'; } },20000);
+</script>
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>
