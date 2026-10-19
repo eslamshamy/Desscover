@@ -17,7 +17,7 @@ function buildBridge() {
   const P = { x0: -90, x1: 90, z0: -70, z1: 80 };
   // the Mulde in a sunken channel between grassy flood dykes
   k.box('lawn', P.x0, -68, -0.12, 0, P.z0, P.z1); k.box('lawn', 68, P.x1, -0.12, 0, P.z0, P.z1);
-  k.box('water', -30, 30, -2.6, -2.0, P.z0, P.z1, 'flood'); k.box('sand', -31, 31, -3.4, -2.6, P.z0, P.z1);
+  k.box('water', -30, 30, -2.5, -2.2, P.z0, P.z1, 'flood');   // still water underneath; the moving surface is added after the build k.box('sand', -31, 31, -3.4, -2.6, P.z0, P.z1);
   // stone riprap along both riverbanks
   for (let z = P.z0 + 4; z < P.z1 - 4; z += 5) {
     [-30.5, 30.5].forEach(rx => {
@@ -70,7 +70,7 @@ function buildBridge() {
   for (let i = 0; i < 16; i++) tree(k, 71 + rand() * 16, P.z0 + 6 + rand() * (P.z1 - P.z0 - 12), 1.1 + rand() * 0.4);
   for (let i = 0; i < 8; i++) tree(k, -71 - rand() * 16, P.z0 + 6 + rand() * (P.z1 - P.z0 - 12), 1.0 + rand() * 0.3);
   for (let i = 0; i < 8; i++) { const a = -TH * 0.9 + rand() * TH * 1.8, p = pt(a, R + (rand() - 0.5) * 2.4, 0); person(k, p[0], p[2], rand() * 6.28, DY + 0.06); }
-  const grp = k.build(); const scene = new THREE.Scene(); scene.add(grp); registerNoAO(grp); plinth(scene, P.x0, P.x1, P.z0, P.z1, 5, 6);
+  const grp = k.build(); flowWater(grp, -30, 30, P.z0, P.z1, -2.05, 0, -1, 1.2); const scene = new THREE.Scene(); scene.add(grp); registerNoAO(grp); plinth(scene, P.x0, P.x1, P.z0, P.z1, 5, 6);
   return { scene, center: new THREE.Vector3(0, 0, 10), span: 95, sunDist: 240, lamps: [], intro: { pos: [-70, 30, -75], tgt: [0, 8, 6] },
     views: [{ label: 'From the riverbank', cam: [-34, 0.9, 52], tgt: [0, 7, 8] }, { label: 'On the deck', cam: [-40, 4.9, 12], tgt: [10, 7, 3] }, { label: 'From the dyke', cam: [-60, 4.9, 60], tgt: [0, 4, 8] }],
     facts: [

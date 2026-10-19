@@ -14,7 +14,7 @@ REG['marien'] = {
 
 function buildMarien() {
   // the long axis runs along x (turned to the real footprint); the tower stands at the west end
-  const k = new Kit(), B = 'brick', S = 'stoneLight', T = 'tilesRed';
+  const k = new Kit(), B = 'redBrick', S = 'stoneLight', T = 'tilesRed';
   const P = { x0: -76, x1: 68, z0: -60, z1: 60 };
   k.box('paving', P.x0, P.x1, -0.12, 0, P.z0, P.z1);
   const NX0 = -16.4, NX1 = 18.6, HZ0 = -11, HZ1 = 12, HC = 0.5, HZ = 11.5, EH = 15;

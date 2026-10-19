@@ -31,6 +31,7 @@ async function goInner(id) {
     camera.position.set(-25, 330, 245); controls.target.copy(mapData.center); controls.update();
     flyTo(new THREE.Vector3(-25, 250, 170), mapData.center, 1600);
     if (location.hash) setHash(location.pathname + location.search);
+    $('immBack').hidden = true;
     if (location.hash) history.replaceState(null, '', location.pathname + location.search);
     refreshProgress();
   } else {
@@ -46,6 +47,7 @@ async function goInner(id) {
     camera.position.copy(ip).multiplyScalar(1.7).setY(ip.y * 2); controls.target.copy(it); controls.update();
     flyTo(ip, it, 2000);
     if (location.hash !== '#' + id) setHash('#' + id);
+    $('immBack').hidden = false;
     if (location.hash !== '#' + id) history.replaceState(null, '', '#' + id);
   }
   applyLighting(timeNow, true);

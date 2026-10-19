@@ -14,7 +14,7 @@ REG['petri'] = {
 
 function buildPetri() {
   // outline from the map data, north up: west tower 9 × 8 m, nave, transept arms with small stair porches, choir ending in a polygonal apse
-  const k = new Kit(), B = 'brick', S = 'stoneLight', T = 'tilesRed';
+  const k = new Kit(), B = 'redBrick', S = 'stoneLight', T = 'tilesRed';
   const P = { x0: -75, x1: 70, z0: -60, z1: 60 };
   k.box('lawn', P.x0, P.x1, -0.12, 0, P.z0, P.z1);
   const NZ0 = -8, NZ1 = 5.5, NX0 = -10.5, NX1 = 10.5, CX0 = 10.5, CX1 = 22.5, CZ = 13, EH = 11;

@@ -20,7 +20,7 @@ function buildKornhaus() {
   const dg = new THREE.ExtrudeGeometry(dyke, { depth: P.x1 - P.x0, bevelEnabled: false }); dg.translate(0, 0, -(P.x1 - P.x0) / 2); dg.rotateY(Math.PI / 2); dg.translate((P.x0 + P.x1) / 2, 0, 0);
   k.geo('lawn', dg);
   // Elbe river and dyke slope
-  k.box('water', P.x0, P.x1, -1.8, -1.0, P.z0, -22, 'guests');
+  k.box('water', P.x0, P.x1, -1.6, -1.2, P.z0, -22, 'guests');   // still water underneath; the moving surface is added after the build
   const beach = new THREE.Shape(); beach.moveTo(-22, -1.0); beach.lineTo(-8, 0); beach.lineTo(-8, -2.4); beach.lineTo(-22, -2.4); beach.closePath();
   const bg = new THREE.ExtrudeGeometry(beach, { depth: P.x1 - P.x0, bevelEnabled: false }); bg.translate(0, 0, -(P.x1 - P.x0) / 2); bg.rotateY(Math.PI / 2); bg.translate((P.x0 + P.x1) / 2, 0, 0);
   k.geo('sand', bg);
@@ -94,7 +94,7 @@ function buildKornhaus() {
       const chLeg = new THREE.CylinderGeometry(0.02, 0.02, 0.45, 6); chLeg.translate(tx + cx, 4.12, tz + cz); k.geo('steel', chLeg, 'name');
     });
   }
-  const grp = k.build();
+  const grp = k.build(); flowWater(grp, P.x0, P.x1, P.z0, -22, -1.05, -1, 0, 1.0);
   // red KORNHAUS neon-style letters on roof
   const tex = letterTexture('KORNHAUS', '#c8372d', 1024, 160, (g, w, h) => { g.font = '600 140px Jost, Futura, Arial, sans-serif'; g.fillText('KORNHAUS', w / 2, h / 2 + 6); });
   const letters = new THREE.Mesh(new THREE.PlaneGeometry(16, 2.5), new THREE.MeshStandardMaterial({ map: tex, alphaTest: 0.5, side: THREE.DoubleSide, roughness: 0.6 }));

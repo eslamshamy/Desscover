@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>DESSCOVER online: explore the landmarks of Dessau</title>
-<meta name="description" content="DESSCOVER online: a map of Dessau with twenty-six landmarks. Open each one as a 3D model, walk around it in the real Dessau sunlight and click to discover its history.">
+<title>DESSCOVER beta: explore the landmarks of Dessau</title>
+<meta name="description" content="DESSCOVER beta: a map of Dessau with twenty-six landmarks. Open each one as a 3D model, walk around it in the real Dessau sunlight and click to discover its history.">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -56,7 +56,7 @@ a{color:inherit}
 .intro{left:16px;top:16px;width:340px;padding:16px 18px 18px}
 .intro .mark{margin-bottom:12px}
 h1{margin:0 0 10px;font-size:46px;line-height:.92;font-weight:500;letter-spacing:-.03em}
-h1 .h1sub{display:block;font-size:20px;letter-spacing:.02em;font-weight:400;color:var(--muted);margin-top:6px}
+h1 .h1sub{display:inline;font-size:20px;letter-spacing:.02em;font-weight:400;color:var(--muted);margin-left:4px;vertical-align:baseline}
 .intro p{margin:0;font-size:15px;line-height:1.45}
 .lmlist{right:16px;top:16px;width:300px;padding:12px 10px 10px;max-height:calc(100% - 90px);overflow:auto}
 .lmlist .lbl{padding:0 8px}
@@ -253,6 +253,23 @@ body.placing #stage canvas{cursor:crosshair!important}
 #sideRail button:focus-visible{outline:3px solid var(--red);outline-offset:2px}
 #sideRail .ri{font:italic 700 20px/1 Georgia,'Times New Roman',serif}
 .card{left:76px}   /* clear of the passport, about and compass column */
+/* full-screen view: only the space itself, a back button and a way out */
+#immBar{position:absolute;top:calc(12px + env(safe-area-inset-top,0px));left:12px;z-index:30;display:none;gap:8px}
+body.immersive #immBar{display:flex}
+body.immersive .ui:not(#toast):not(#walkHud),body.immersive #sideRail,body.immersive #compass,body.immersive #labels,body.immersive #markers,body.immersive #people{display:none!important}
+.wspeed{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:13px}.wspeed input{flex:1;min-width:0}.wspeed output{min-width:3em;text-align:right;font-variant-numeric:tabular-nums}
+/* close buttons, the news editor and the tour */
+.ptab .pcol.pclose{font-size:17px;line-height:1}
+.newsEditor fieldset{border:1px solid var(--rule);margin:0 0 10px;padding:8px 10px}.newsEditor legend{font-size:12px;color:var(--muted)}
+.newsEditor label{display:block;margin:4px 0}.newsEditor label span{display:block;font-size:12px;color:var(--muted)}
+.newsEditor input,.newsEditor textarea{width:100%;box-sizing:border-box;font:inherit;padding:5px 7px;border:1px solid var(--ink);background:var(--paper);color:var(--ink)}.newsEditor textarea{min-height:64px}
+#tour{position:absolute;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);width:min(420px,calc(100% - 24px));z-index:40;background:var(--paper);color:var(--ink);border:2px solid var(--ink);padding:14px 16px 12px;box-shadow:0 6px 0 rgba(0,0,0,.25)}
+#tour h2{margin:2px 0 6px;font-size:19px;font-weight:500}#tour p{margin:0 0 10px}#tour .tourCount{font-size:12px;color:var(--muted);margin:0}
+#tour .row{display:flex;gap:6px;align-items:center}#tour .sp{flex:1}
+.tourHL{outline:3px solid var(--red)!important;outline-offset:3px;border-radius:4px;animation:tourPulse 1.4s ease-in-out infinite}
+@keyframes tourPulse{50%{outline-color:transparent}}
+@media (prefers-reduced-motion:reduce){.tourHL{animation:none}}
+body.immersive #tour{display:none!important}
 /* phones: a compact top bar, bottom sheets for the lists, the 3D view in between */
 @media (max-width:700px){
   .toolbar{top:calc(8px + env(safe-area-inset-top,0px));bottom:auto;right:8px;gap:4px}
@@ -299,7 +316,7 @@ body.placing #stage canvas{cursor:crosshair!important}
   <!-- map mode -->
   <section class="ui panel intro" id="intro" aria-label="Introduction">
     <div class="mark" aria-hidden="true"><i class="m1"></i><i class="m2"></i><i class="m3"></i></div>
-    <h1>DESSCOVER <span class="h1sub">online</span></h1>
+    <h1>DESSCOVER <span class="h1sub">beta</span></h1>
     <p class="tagline">Welcome to The Digital Dessau.</p>
     <button class="lpBadge" type="button" id="lpBadge" title="Read about it in the news section"><span class="lpTop">Best in Travel 2027</span><span class="lpBot">Lonely Planet · one of 25 places to visit</span></button>
     <p>Twenty-six landmarks, from a Renaissance palace wing to two shopping centres, across the city and out to Wörlitz. Choose one on the map to open it in 3D, then click around it to uncover its history. Zoom out to see Mosigkau and Wörlitz.</p>
@@ -317,7 +334,7 @@ body.placing #stage canvas{cursor:crosshair!important}
     <h2>News from Dessau</h2>
     <p class="muted" id="newsStamp"></p>
     <ol class="newsList" id="newsList"></ol>
-    <div class="row"><button class="btn" type="button" id="newsClose">Close</button></div>
+    <div class="row"><button class="btn ghost" type="button" id="newsRefresh">Refresh</button><button class="btn ghost" type="button" id="newsEdit" hidden>Edit the news</button><button class="btn" type="button" id="newsClose">Close</button></div>
   </section>
   <section class="ui panel infoPanel" id="passportPanel" hidden aria-label="My passport">
     <h2>My passport</h2>
@@ -328,7 +345,7 @@ body.placing #stage canvas{cursor:crosshair!important}
   </section>
   <section class="ui panel infoPanel" id="aboutPanel" hidden aria-label="About this project">
     <h2>About</h2>
-    <p><b>DESSCOVER online</b> is developed by <b>Eslam ElShamy</b>, an architect and designer based in Dessau.</p>
+    <p><b>DESSCOVER beta</b> is developed by <b>Eslam ElShamy</b>, an architect and designer based in Dessau.</p>
     <p>It brings the city's landmarks together on one map, as 3D models you can explore across time, walk through and redesign, with stories drawn from the sources cited on every card. The models are reconstructions from published dimensions, photographs and descriptions, so some details are approximate.</p>
     <div class="row" id="aboutLinks"></div>
     <p class="muted">Built with three.js. Base map: © OpenStreetMap contributors (ODbL). Models drawn for this project.</p>
@@ -337,6 +354,7 @@ body.placing #stage canvas{cursor:crosshair!important}
   <nav class="ui panel lmlist" id="lmlist" aria-label="Landmarks"><p class="lbl">landmarks</p><div id="lmButtons"></div></nav>
   <nav id="sideRail" aria-label="Passport and about">
   <button type="button" id="railPassport" aria-pressed="false" title="My passport" aria-label="My passport: your stamps and stories"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><rect x="5" y="2.5" width="14" height="19" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="10.5" r="3.4" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8.5 16.5h7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+  <button type="button" id="railHelp" title="How it works" aria-label="How it works: play the short tour"><span class="ri" style="font-style:normal">?</span></button>
   <button type="button" id="railAbout" aria-pressed="false" title="About" aria-label="About this project"><span class="ri">i</span></button>
 </nav>
 <button type="button" id="compass" title="Compass: click to face north" aria-label="Compass, click to turn the view to face north"><span class="rose" id="compassRose"><span class="cn">N</span><i class="nN"></i><i class="nS"></i></span></button>
@@ -391,12 +409,14 @@ body.placing #stage canvas{cursor:crosshair!important}
   <button class="btn ghost" type="button" id="layoutBtn" title="Put every panel back in its place and open it">Reset panels</button>
   <button class="btn ghost" type="button" id="postcardBtn">Postcard</button>
   <button class="btn ghost" type="button" id="langBtn" data-no-tr lang="de" title="Auf Deutsch umschalten">DE</button>
+  <button class="btn ghost" type="button" id="immBtn" title="Full screen: hide the interface and explore freely" aria-label="Full screen: hide the interface and explore freely">⛶</button>
   <button class="btn ghost" type="button" id="themeBtn" aria-label="Switch between light and dark mode" title="Light or dark mode">☾</button>
 </div>
 <div class="ui panel" id="toast" hidden role="status"><span id="toastText"></span><button class="btn" type="button" id="toastBtn" hidden></button></div>
 <div class="ui panel" id="walkHud" hidden>
   <b>Walking</b>
   <span>W A S D or the arrow keys to move, drag to look around, Q and E to turn, hold Shift to hurry.</span>
+  <label class="wspeed"><span>Walking speed</span><input type="range" id="walkSpeed" min="0.25" max="3" step="0.25" value="1" aria-label="Walking speed"><output id="walkSpeedOut" data-no-tr>1×</output></label>
   <div class="pad" id="walkPad" aria-label="Movement">
     <button type="button" data-code="KeyQ" aria-label="Turn left">&#8634;</button><button type="button" data-code="KeyW" aria-label="Forward">&uarr;</button><button type="button" data-code="KeyE" aria-label="Turn right">&#8635;</button>
     <button type="button" data-code="KeyA" aria-label="Step left">&larr;</button><button type="button" data-code="KeyS" aria-label="Back">&darr;</button><button type="button" data-code="KeyD" aria-label="Step right">&rarr;</button>
@@ -413,6 +433,9 @@ body.placing #stage canvas{cursor:crosshair!important}
   <div class="byoRow"><span class="lbl">colour</span><div class="byoCols" id="byoCols" role="group" aria-label="Colour"></div></div>
 </div>
 <div id="modalBack" hidden><div class="modal panel" role="dialog" aria-modal="true" aria-labelledby="mTitle"><h3 id="mTitle"></h3><div id="mBody"></div><div class="mActions" id="mActions"></div></div></div>
+<div id="immBar"><button class="btn" type="button" id="immBack">← Back to the map</button><button class="btn ghost" type="button" id="immExit">Show the interface</button></div>
+<section id="tour" hidden role="dialog" aria-labelledby="tourTitle"><p class="tourCount" id="tourCount"></p><h2 id="tourTitle"></h2><p id="tourText"></p>
+  <div class="row"><button class="btn ghost" type="button" id="tourSkip">Skip</button><span class="sp"></span><button class="btn ghost" type="button" id="tourBack">Back</button><button class="btn" type="button" id="tourNext">Next</button></div></section>
 <div id="tip"></div>
 <script>
 window.__bootTimer=setTimeout(function(){ if(!window.__started){ var v=document.getElementById('veilText'); if(v) v.textContent='The 3D library could not load. Check your connection and reload.'; } },20000);

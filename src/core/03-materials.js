@@ -22,7 +22,7 @@ function makeWater() {
 }
 function std(color, rough, metal, tex, extra) {
   const m = new THREE.MeshStandardMaterial(Object.assign({ color: color, roughness: rough == null ? 0.9 : rough, metalness: metal || 0 }, extra || {}));
-  if (tex) { m.map = getTex(tex); const b = BUMP[tex]; if (b) { m.bumpMap = m.map; m.bumpScale = b; } }
+  if (tex) { m.userData.tex = tex; m.map = getTex(tex); const b = BUMP[tex]; if (b) { m.bumpMap = m.map; m.bumpScale = b; } }
   return m;
 }
 const BUMP = { render: 0.06, stone: 0.18, brick: 0.25, brickBuff: 0.25, concrete: 0.12, paving: 0.2, cobble: 0.35, roofing: 0.1, slate: 0.15, tile: 0.2, stains: 0.06, gravel: 0.25, ballast: 0.3 };
@@ -45,7 +45,7 @@ const MAT = {
   renderWarm: std(0xe6dcc8, 0.92, 0, 'render'), stoneLight: std(0xe6dccb, 0.85, 0, 'stone'), tiles: std(0xb3664a, 0.85, 0, 'tile'),
   newWhite: std(0xf2f1ec, 0.75, 0, 'render'), frost: glass(0xe6edef, 0.86, 0.5, 0, 0.5, 1.0),
   soot: std(0xa29e98, 0.95, 0, 'stains'), postwar: std(0xd0c8b3, 0.95, 0, 'stains'), camo: std(0xffffff, 0.95, 0, 'camo'),
-  alu: std(0xa8adb1, 0.35, 0.85), rust: std(0x7b4a33, 0.85, 0.3), ochre: std(0xc8a46a, 0.92, 0, 'render'), brick: std(0xffffff, 0.9, 0, 'brick'),
+  alu: std(0xa8adb1, 0.35, 0.85), rust: std(0x7b4a33, 0.85, 0.3), ochre: std(0xc8a46a, 0.92, 0, 'render'), brick: std(0xffffff, 0.9, 0, 'brick'), ground: std(0xbdb6a2, 0.96, 0, 'stains'), lawnReal: null, redBrick: std(0xd88f78, 0.9, 0, 'brick'),
   bauRed: std(0xc8372d, 0.85, 0, 'render'), bauBlue: std(0x1f4fa3, 0.85, 0, 'render'), bauYellow: std(0xefc12c, 0.85, 0, 'render'), black: std(0x1b1b1c, 0.85, 0, 'render'),
   none: new THREE.MeshBasicMaterial({ visible: false }), glassSmoked: glass(0x1d2c35, 0.8, 0.06, 0.2, 1.2, 0.35),
   brickBuff: std(0xffffff, 0.9, 0, 'brickBuff'), sandstone: std(0xd2c6a8, 0.85, 0, 'stone'), blackstone: std(0x2f3031, 0.6, 0.1, 'stone'),
@@ -68,7 +68,8 @@ const MAT = {
   glass: glass(0x8faab2, 0.34, 0.02, 0.3, 2.0, 1), glassDark: glass(0x6e8790, 0.55, 0.05, 0.3, 1.6, 0.8),
   museumGlass: glass(0xb5cdd3, 0.2, 0.03, 0.25, 1.6, 0.9),
   glassYellow: glass(0xf2c230, 0.55, 0.1, 0, 0.6, 0.3), glassRed: glass(0xd8452f, 0.55, 0.1, 0, 0.6, 0.3), glassBlue: glass(0x3a6fd0, 0.55, 0.1, 0, 0.6, 0.3), glassGreen: glass(0x3f9a6a, 0.55, 0.1, 0, 0.6, 0.3)
-};
+};MAT.lawnReal = MAT.lawn;
+
 Object.keys(MAT).forEach(k => { if (MAT[k].transparent) GLASSY.add(k); });
 const CEIL = ['ceilO', 'ceilY', 'ceilB', 'hallCeiling'];
 const WARM = new THREE.Color(0xffc479);

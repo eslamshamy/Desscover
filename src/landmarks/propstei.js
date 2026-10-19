@@ -14,7 +14,7 @@ REG['propstei'] = {
 
 function buildPropstei() {
   // outline from the map data, long axis along x: tower at the west end on the street, a 14.4 m nave with buttresses at every bay, a polygonal apse
-  const k = new Kit(), B = 'brick', S = 'stoneLight';
+  const k = new Kit(), B = 'redBrick', S = 'stoneLight';
   const P = { x0: -64, x1: 62, z0: -48, z1: 48 };
   k.box('paving', P.x0, P.x1, -0.12, 0, P.z0, P.z1);
   const NZ0 = -6.6, NZ1 = 7.8, NC = 0.6, EH = 11.5, NX0 = -17.7, NSPLIT = -1.6, NX1 = 14;

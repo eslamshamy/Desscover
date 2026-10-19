@@ -169,7 +169,7 @@ function drawCertificate(name) {
     g.fillStyle = '#16171a'; g.font = '500 ' + F(17); g.fillText(l.name, cx, cy + 72); g.textAlign = 'left';
   });
   g.fillStyle = '#5b6064'; g.font = '400 ' + F(24); g.fillText(new Date().toLocaleDateString(LANG === 'de' ? 'de-DE' : 'en-GB', { day: 'numeric', month: 'long', year: 'numeric' }), 92, H - 60);
-  g.textAlign = 'right'; g.fillText('DESSCOVER online', W - 92, H - 60); g.textAlign = 'left';
+  g.textAlign = 'right'; g.fillText('DESSCOVER beta', W - 92, H - 60); g.textAlign = 'left';
   canvasOut(c, 'desscover-certificate.png');
 }
 
@@ -191,7 +191,7 @@ function postcard(caption) {
     g.font = '400 ' + F(30); g.fillStyle = '#5b6064';
     const era = cur && cur.eras && cur.eraIdx != null ? cur.eras[cur.eraIdx].year + ', ' : '';
     g.fillText(typeof caption === 'string' ? caption : (lm ? lm.label + ', ' + era : tr('The map of Dessau') + ', ') + fmt(timeNow) + (LANG === 'de' ? ' am ' + { dec: '4. Dezember', mar: '21. März', jun: '21. Juni' }[dateKey] : ' on ' + { dec: '4 December', mar: '21 March', jun: '21 June' }[dateKey]), 60, 1190);
-    g.textAlign = 'right'; g.font = '500 ' + F(28); g.fillStyle = '#16171a'; g.fillText('DESSCOVER online', W - 60, 1135); g.textAlign = 'left';
+    g.textAlign = 'right'; g.font = '500 ' + F(28); g.fillStyle = '#16171a'; g.fillText('DESSCOVER beta', W - 60, 1135); g.textAlign = 'left';
     canvasOut(c, 'desscover-postcard' + (lm ? '-' + lm.id : '') + '.png');
   };
   img.src = shot;
@@ -241,9 +241,10 @@ function showResident(r) {
 }
 
 /* ---------- walking ---------- */
-const WALK = { on: false, yaw: 0, pitch: 0, pos: new THREE.Vector3(), keys: new Set(), drag: null };
+const WALK = { on: false, yaw: 0, pitch: 0, pos: new THREE.Vector3(), keys: new Set(), drag: null, mult: (() => { try { const v = parseFloat(localStorage.getItem('dessau-walk-speed')); return v >= 0.25 && v <= 4 ? v : 1; } catch (e) { return 1; } })() };
 const WALK_CODES = new Set(['KeyW', 'KeyA', 'KeyS', 'KeyD', 'KeyQ', 'KeyE', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ShiftLeft', 'ShiftRight']);
 function startWalk() {
+  setTimeout(() => focusPanel('walkHud'), 0);
   if (!cur) return; stopReplay(); closeDress(); tween = null;
   const dir = controls.target.clone().sub(camera.position); dir.y = 0; if (dir.lengthSq() < 1e-6) dir.set(0, 0, 1); dir.normalize();
   const lim = cur.span * 1.05; let p = camera.position.clone();
@@ -253,13 +254,14 @@ function startWalk() {
   $('walkHud').hidden = false; $('walkBtn').setAttribute('aria-pressed', 'true'); hideTip();
 }
 function stopWalk() {
+  unfocusPanel('walkHud');
   if (!WALK.on) return; WALK.on = false; WALK.keys.clear(); WALK.drag = null; controls.enabled = true;
   const f = new THREE.Vector3(Math.sin(WALK.yaw), 0, Math.cos(WALK.yaw));
   controls.target.copy(camera.position).addScaledVector(f, 12); controls.target.y = Math.max(1, camera.position.y - 1); controls.update();
   $('walkHud').hidden = true; $('walkBtn').setAttribute('aria-pressed', 'false');
 }
 function updateWalk(dt) {
-  const k = WALK.keys, sp = (k.has('ShiftLeft') || k.has('ShiftRight') ? 9 : 4) * dt;
+  const k = WALK.keys, sp = (k.has('ShiftLeft') || k.has('ShiftRight') ? 9 : 4) * WALK.mult * dt;
   if (k.has('KeyQ')) WALK.yaw += 1.6 * dt; if (k.has('KeyE')) WALK.yaw -= 1.6 * dt;
   const fw = new THREE.Vector3(Math.sin(WALK.yaw), 0, Math.cos(WALK.yaw)), rt = new THREE.Vector3(-Math.cos(WALK.yaw), 0, Math.sin(WALK.yaw));
   if (k.has('KeyW') || k.has('ArrowUp')) WALK.pos.addScaledVector(fw, sp);
@@ -280,6 +282,10 @@ document.querySelectorAll('#walkPad button').forEach(b => {
   b.addEventListener('pointerdown', on); b.addEventListener('pointerup', off); b.addEventListener('pointerleave', off); b.addEventListener('pointercancel', off);
 });
 window.addEventListener('keyup', e => { WALK.keys.delete(e.code); });
+// walking speed: the slider in the walking panel, or + and - while walking
+function setWalkSpeed(v) { WALK.mult = Math.min(3, Math.max(0.25, Math.round(v * 4) / 4)); const r = $('walkSpeed'), o = $('walkSpeedOut'); if (r) r.value = WALK.mult; if (o) o.textContent = WALK.mult.toString().replace('.', LANG === 'de' ? ',' : '.') + '×'; try { localStorage.setItem('dessau-walk-speed', WALK.mult); } catch (e) {} }
+$('walkSpeed').addEventListener('input', e => setWalkSpeed(parseFloat(e.target.value))); setWalkSpeed(WALK.mult);
+window.addEventListener('keydown', e => { if (!WALK.on) return; if (e.key === '+' || e.key === '=') setWalkSpeed(WALK.mult + 0.25); else if (e.key === '-' || e.key === '_') setWalkSpeed(WALK.mult - 0.25); });
 window.addEventListener('blur', () => WALK.keys.clear());
 
 /* ---------- build replay ---------- */
@@ -335,8 +341,8 @@ const DRESS = { on: false, key: null };
     b.appendChild(c); b.appendChild(t); b.onclick = () => dressApply(sw[0]); el.appendChild(b);
   });
 })();
-function openDress() { stopWalk(); stopReplay(); closeFact(); DRESS.on = true; DRESS.key = null; $('dressTray').hidden = false; $('dressSel').textContent = 'Click a surface of the building, then a swatch.'; $('dressBtn').setAttribute('aria-pressed', 'true'); }
-function closeDress() { DRESS.on = false; DRESS.key = null; $('dressTray').hidden = true; $('dressBtn').setAttribute('aria-pressed', 'false'); }
+function openDress() { setTimeout(() => focusPanel('dressTray'), 0); stopWalk(); stopReplay(); closeFact(); DRESS.on = true; DRESS.key = null; $('dressTray').hidden = false; $('dressSel').textContent = 'Click a surface of the building, then a swatch.'; $('dressBtn').setAttribute('aria-pressed', 'true'); }
+function closeDress() { unfocusPanel('dressTray'); DRESS.on = false; DRESS.key = null; $('dressTray').hidden = true; $('dressBtn').setAttribute('aria-pressed', 'false'); }
 function dressPick(h) { const key = MATNAME.get(h.object.userData.baseMat || h.object.material); if (!key) return; DRESS.key = key; $('dressSel').textContent = 'Selected: ' + (LABEL[key] || key) + '. Now choose a swatch.'; }
 function dressApply(id) { if (!cur) return; if (!DRESS.key) { toast('Click a surface of the building first.'); return; } cur.dress = cur.dress || {}; cur.dress[DRESS.key] = MAT[id]; applyOverrides(); }
 function dressReset() { if (!cur) return; cur.dress = {}; applyOverrides(); toast('Back to the real materials.'); }
@@ -400,27 +406,43 @@ function uipClamp(el) {
 function uipPlace(el, l, t) { el.style.left = l + 'px'; el.style.top = t + 'px'; el.style.right = 'auto'; el.style.bottom = 'auto'; el.style.transform = 'none'; uipClamp(el); }
 function uipRemember(el) { const s = UIP.st[el.id] = UIP.st[el.id] || {}; s.l = parseFloat(el.style.left); s.t = parseFloat(el.style.top); uipSave(); }
 function uipReset(el) { ['left', 'top', 'right', 'bottom', 'transform', 'zIndex'].forEach(p => { el.style[p] = ''; }); if (UIP.st[el.id]) { delete UIP.st[el.id].l; delete UIP.st[el.id].t; } uipSave(); }
-function uipCollapse(el, on) {
+const UIP_KEEP = new Set(['intro', 'lmlist']);   // the main map panels fold; every other panel closes with ×
+function uipCollapse(el, on, temp) {
   el.classList.toggle('collapsed', on); const b = el.querySelector(':scope > .ptab .pcol');
-  if (b) { b.textContent = on ? '+' : '–'; b.setAttribute('aria-expanded', on ? 'false' : 'true'); b.title = on ? 'Expand' : 'Collapse'; }
-  (UIP.st[el.id] = UIP.st[el.id] || {}).c = on; uipSave(); if (el.style.left) uipClamp(el);
+  if (b && UIP_KEEP.has(el.id)) { b.textContent = on ? '+' : '–'; b.setAttribute('aria-expanded', on ? 'false' : 'true'); b.title = on ? 'Expand' : 'Collapse'; }
+  if (!temp) { (UIP.st[el.id] = UIP.st[el.id] || {}).c = on; uipSave(); } if (el.style.left) uipClamp(el);
 }
+// closing a panel with its × button
+function uipClose(el) {
+  const id = el.id; unfocusPanel(id);
+  if (id === 'newsPanel' || id === 'aboutPanel' || id === 'passportPanel') infoClose(id); else if (id === 'card') closeFact(); else if (id === 'dressTray') closeDress();
+  else if (id === 'byoTray') byoClose(); else if (id === 'walkHud') stopWalk(); else el.hidden = true;
+}
+// opening a window folds the other open panels for a while; closing it unfolds them again
+const FOCUS = { id: null, saved: [] };
+function focusPanel(id) {
+  unfocusPanel(); const saved = [];
+  document.querySelectorAll('.ui').forEach(el => { if (el.id === id || el.hidden || !el.querySelector(':scope > .ptab') || el.classList.contains('collapsed')) return; uipCollapse(el, true, true); saved.push(el); });
+  FOCUS.id = id; FOCUS.saved = saved; const me = $(id); if (me && me.classList.contains('collapsed')) uipCollapse(me, false, true);
+}
+function unfocusPanel(id) { if (!FOCUS.id || (id && FOCUS.id !== id)) return; FOCUS.saved.forEach(el => { if (!el.hidden) uipCollapse(el, false, true); }); FOCUS.id = null; FOCUS.saved = []; }
 function uipFront(el) { if (UIP.top && UIP.top !== el) UIP.top.style.zIndex = ''; el.style.zIndex = 8; UIP.top = el; }
-[['newsPanel', 'City news'], ['aboutPanel', 'About'], ['passportPanel', 'My passport'], ['intro', 'DESSCOVER online'], ['lmlist', 'Landmarks'], ['bhead', 'Building'], ['bpanel', 'Tools and stories'], ['card', 'Story'], ['dressTray', 'Redesign'], ['walkHud', 'Walk'], ['byoTray', 'Build your own house']].forEach(([id, name]) => {
+[['newsPanel', 'City news'], ['aboutPanel', 'About'], ['passportPanel', 'My passport'], ['intro', 'DESSCOVER beta'], ['lmlist', 'Landmarks'], ['bhead', 'Building'], ['bpanel', 'Tools and stories'], ['card', 'Story'], ['dressTray', 'Redesign'], ['walkHud', 'Walk'], ['byoTray', 'Build your own house']].forEach(([id, name]) => {
   const el = $(id); if (!el) return;
   const tab = document.createElement('div'); tab.className = 'ptab';
   const grip = document.createElement('button'); grip.type = 'button'; grip.className = 'grip' + (id === 'intro' ? ' keepcase' : ''); grip.title = 'Drag to move. Double-click to put it back.';
   grip.setAttribute('aria-label', 'Move the ' + name + ' panel: use the arrow keys, or double-click to put it back');
   const dots = document.createElement('span'); dots.className = 'dots'; dots.setAttribute('aria-hidden', 'true'); dots.textContent = '⠿'; grip.appendChild(dots); grip.appendChild(document.createTextNode(name));
-  const col = document.createElement('button'); col.type = 'button'; col.className = 'pcol'; col.textContent = '–'; col.title = 'Collapse'; col.setAttribute('aria-expanded', 'true'); col.setAttribute('aria-label', 'Collapse or expand the ' + name + ' panel');
+  const keepTab = UIP_KEEP.has(id), col = document.createElement('button'); col.type = 'button'; col.className = 'pcol' + (keepTab ? '' : ' pclose'); col.textContent = keepTab ? '–' : '×'; col.title = keepTab ? 'Collapse' : 'Close'; if (keepTab) { col.setAttribute('aria-expanded', 'true'); col.setAttribute('aria-label', 'Collapse or expand the ' + name + ' panel'); } else col.setAttribute('aria-label', 'Close the ' + name + ' panel');
   tab.appendChild(grip); tab.appendChild(col); el.insertBefore(tab, el.firstChild);
   const fit = () => { const cs = getComputedStyle(el); tab.style.margin = '-' + cs.paddingTop + ' -' + cs.paddingRight + ' 10px -' + cs.paddingLeft; tab.style.top = '-' + cs.paddingTop; if (cs.display === 'flex') { el.style.flexWrap = 'wrap'; tab.style.flexBasis = 'calc(100% + ' + cs.paddingLeft + ' + ' + cs.paddingRight + ')'; } };
   fit(); new MutationObserver(() => { if (!el.hidden && !tab.style.margin.startsWith('-')) fit(); }).observe(el, { attributes: true, attributeFilter: ['hidden'] });
-  col.addEventListener('click', e => { e.stopPropagation(); uipCollapse(el, !el.classList.contains('collapsed')); });
+  col.addEventListener('click', e => { e.stopPropagation(); if (keepTab) uipCollapse(el, !el.classList.contains('collapsed')); else uipClose(el); });
   let drag = null;
   grip.addEventListener('pointerdown', e => { if (e.button !== 0 || PHONE.matches) return; const r = el.getBoundingClientRect(); drag = { dx: e.clientX - r.left, dy: e.clientY - r.top, x0: e.clientX, y0: e.clientY, moved: false }; grip.setPointerCapture(e.pointerId); uipFront(el); e.preventDefault(); e.stopPropagation(); });
   grip.addEventListener('pointermove', e => { if (!drag) return; if (!drag.moved && Math.hypot(e.clientX - drag.x0, e.clientY - drag.y0) < 4) return; drag.moved = true; el.classList.add('dragging'); uipPlace(el, e.clientX - drag.dx, e.clientY - drag.dy); });
-  const end = () => { if (!drag) return; el.classList.remove('dragging'); if (drag.moved) uipRemember(el); drag = null; };
+  const end = () => { if (!drag) return; el.classList.remove('dragging'); if (drag.moved) { uipRemember(el); grip._moved = Date.now(); } drag = null; };
+  grip.addEventListener('click', e => { if (grip._moved && Date.now() - grip._moved < 300) return; uipCollapse(el, !el.classList.contains('collapsed')); });
   grip.addEventListener('pointerup', end); grip.addEventListener('pointercancel', end);
   grip.addEventListener('dblclick', e => { e.preventDefault(); uipReset(el); });
   grip.addEventListener('keydown', e => { const d = { ArrowLeft: [-16, 0], ArrowRight: [16, 0], ArrowUp: [0, -16], ArrowDown: [0, 16] }[e.key]; if (!d) return; e.preventDefault(); e.stopPropagation(); const r = el.getBoundingClientRect(); uipFront(el); uipPlace(el, r.left + d[0], r.top + d[1]); uipRemember(el); });
@@ -435,13 +457,42 @@ PHONE.addEventListener('change', () => { if (PHONE.matches) document.querySelect
 // language switch: the page reloads in the other language and keeps the landmark that is open
 { const b = $('langBtn'); if (b) { b.textContent = LANG === 'de' ? 'EN' : 'DE'; b.setAttribute('lang', LANG === 'de' ? 'en' : 'de'); b.title = LANG === 'de' ? 'Switch to English' : 'Auf Deutsch umschalten'; b.setAttribute('aria-label', b.title);
   b.onclick = () => { try { localStorage.setItem(LANG_KEY, LANG === 'de' ? 'en' : 'de'); } catch (e) {} location.reload(); }; } }
+// full-screen view
+function setImmersive(on) {
+  document.body.classList.toggle('immersive', on); $('immBack').hidden = curId === 'map';
+  try { if (on && !document.fullscreenElement && document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(() => {}); else if (!on && document.fullscreenElement) document.exitFullscreen().catch(() => {}); } catch (e) {}
+  if (on) toast(tr('Full screen. Press Esc or use “Show the interface” to come back.'));
+}
+$('immBtn').onclick = () => setImmersive(true); $('immExit').onclick = () => setImmersive(false); $('immBack').onclick = () => go('map');
+document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement && document.body.classList.contains('immersive')) setImmersive(false); });
+window.addEventListener('keydown', e => { if (e.key === 'Escape' && document.body.classList.contains('immersive') && !WALK.on) setImmersive(false); });
+// a short tour on the first visit; the ? icon plays it again
+const TOUR = [
+  { t: 'Welcome to DESSCOVER beta', x: 'Explore twenty-six landmarks of Dessau in 3D, from the Bauhaus to Wörlitz.' },
+  { t: 'Pick a landmark', x: 'Click a numbered pin on the map or a name in this list to open a landmark in 3D.', el: 'lmlist' },
+  { t: 'Uncover its stories', x: 'Inside, click the numbered circles on the building to read its stories, and use the year buttons to travel through time.' },
+  { t: 'Collect stamps', x: 'Once you have seen every story, one question pops up. Answer it to earn a stamp in your passport.', el: 'railPassport' },
+  { t: 'Make it yours', x: 'Here you switch language, light or dark mode and full screen, or make a postcard.', el: 'toolbar' }
+];
+const TOUR_KEY = 'dessau-tour-v1'; let tourStep = -1;
+function tourShow(i) {
+  document.querySelectorAll('.tourHL').forEach(e => e.classList.remove('tourHL'));
+  if (i < 0 || i >= TOUR.length) { tourStep = -1; $('tour').hidden = true; try { localStorage.setItem(TOUR_KEY, '1'); } catch (e) {} return; }
+  tourStep = i; const s = TOUR[i]; $('tourTitle').textContent = tr(s.t); $('tourText').textContent = tr(s.x);
+  $('tourCount').textContent = (i + 1) + ' / ' + TOUR.length; $('tourBack').hidden = i === 0; $('tourNext').textContent = tr(i === TOUR.length - 1 ? 'Start exploring' : 'Next');
+  if (s.el && $(s.el) && !$(s.el).hidden) $(s.el).classList.add('tourHL'); $('tour').hidden = false; $('tourNext').focus();
+}
+$('tourNext').onclick = () => tourShow(tourStep + 1); $('tourBack').onclick = () => tourShow(tourStep - 1); $('tourSkip').onclick = () => tourShow(-1);
+$('railHelp').onclick = () => { if (curId !== 'map') go('map'); tourShow(0); };
+window.addEventListener('keydown', e => { if (e.key === 'Escape' && tourStep >= 0) tourShow(-1); });
+try { if (!localStorage.getItem(TOUR_KEY)) setTimeout(() => { if (curId === 'map') tourShow(0); }, 1600); } catch (e) {}
 const THEME_KEY = 'dessau-theme';
 function effectiveTheme() { const t = document.documentElement.dataset.theme; return t || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'); }
 function applyTheme(t) { if (t) document.documentElement.dataset.theme = t; else delete document.documentElement.dataset.theme; const e = effectiveTheme(), b = $('themeBtn'); if (b) { b.textContent = e === 'dark' ? '☀' : '☾'; b.title = e === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'; b.setAttribute('aria-label', b.title); } }
 try { applyTheme(localStorage.getItem(THEME_KEY) || ''); } catch (e) { applyTheme(''); }
 $('themeBtn').onclick = () => { const next = effectiveTheme() === 'dark' ? 'light' : 'dark'; applyTheme(next); try { localStorage.setItem(THEME_KEY, next); } catch (e) {} };
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => applyTheme(document.documentElement.dataset.theme || ''));
-$('layoutBtn').onclick = () => { document.querySelectorAll('.ui').forEach(el => { if (el.querySelector(':scope > .ptab')) { uipReset(el); if (el.classList.contains('collapsed')) uipCollapse(el, false); } }); UIP.st = {}; uipSave(); toast('All panels are back in place.'); };
+$('layoutBtn').onclick = () => { if (curId !== 'map') ['bhead', 'bpanel'].forEach(id => { $(id).hidden = false; }); document.querySelectorAll('.ui').forEach(el => { if (el.querySelector(':scope > .ptab')) { uipReset(el); if (el.classList.contains('collapsed')) uipCollapse(el, false); } }); UIP.st = {}; uipSave(); toast('All panels are back in place.'); };
 
 /* ================================================================
    ACTIVITIES: build your own Masters' House, visitor notes, ask the building
@@ -507,13 +558,14 @@ function byoClick(e) {
   byoAdd({ d: [t.w, t.h, t.d], c: BYO_COLS[BYO.color][0], x: +t.x.toFixed(2), y: +t.y.toFixed(2), z: +t.z.toFixed(2) });
 }
 function byoStart() {
+  setTimeout(() => focusPanel('byoTray'), 0);
   if (curId !== 'meister' || !cur) return;
   stopWalk(); stopReplay(); closeDress(); closeFact(); byoEnsure();
   BYO.on = true; BYO.grid.visible = true; $('byoTray').hidden = false; $('byoBtn').setAttribute('aria-pressed', 'true');
   const cx = (BYO_PLOT.x0 + BYO_PLOT.x1) / 2, cz = (BYO_PLOT.z0 + BYO_PLOT.z1) / 2;
   flyTo(rotPt([cx - 24, 17, cz - 30]), rotPt([cx, 3, cz]), 1500); byoStatus();
 }
-function byoClose() { if (!BYO.on) return; BYO.on = false; if (BYO.ghost) BYO.ghost.visible = false; if (BYO.grid) BYO.grid.visible = false; $('byoTray').hidden = true; $('byoBtn').setAttribute('aria-pressed', 'false'); dom.style.cursor = ''; }
+function byoClose() { if (!BYO.on) return; unfocusPanel('byoTray'); BYO.on = false; if (BYO.ghost) BYO.ghost.visible = false; if (BYO.grid) BYO.grid.visible = false; $('byoTray').hidden = true; $('byoBtn').setAttribute('aria-pressed', 'false'); dom.style.cursor = ''; }
 (function byoUI() {
   const sz = $('byoSizes'); BYO_SIZES.forEach((s, i) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = s[0]; b.setAttribute('aria-pressed', i === 0 ? 'true' : 'false'); b.onclick = () => { BYO.size = i; [...sz.children].forEach((c, j) => c.setAttribute('aria-pressed', j === i ? 'true' : 'false')); BYO.erase = false; $('byoErase').setAttribute('aria-pressed', 'false'); byoStatus(); }; sz.appendChild(b); });
   const cl = $('byoCols'); BYO_COLS.forEach((c, i) => { const b = document.createElement('button'); b.type = 'button'; b.title = c[1]; b.setAttribute('aria-label', c[1]); b.style.background = c[2]; b.setAttribute('aria-pressed', i === 0 ? 'true' : 'false'); b.onclick = () => { BYO.color = i; [...cl.children].forEach((x, j) => x.setAttribute('aria-pressed', j === i ? 'true' : 'false')); BYO.erase = false; $('byoErase').setAttribute('aria-pressed', 'false'); byoStatus(); }; cl.appendChild(b); });
@@ -558,13 +610,14 @@ function renderNews(hot) {
 }
 const INFO_BTN = { newsPanel: 'newsBtn', aboutPanel: 'railAbout', passportPanel: 'railPassport' };
 function infoOpen(id, hot) {
+  setTimeout(() => focusPanel(id), 0);
   Object.keys(INFO_BTN).forEach(o => { if (o !== id) infoClose(o); });
   if (id === 'newsPanel') renderNews(hot);
   $(id).hidden = false; if ($(id).classList.contains('collapsed')) uipCollapse($(id), false); uipFront($(id));
   $(INFO_BTN[id]).setAttribute('aria-pressed', 'true');
   if (hot) { const el = $('newsList').querySelector('li.hot'); if (el) el.scrollIntoView({ block: 'nearest' }); }
 }
-function infoClose(id) { const el = $(id); if (!el) return; el.hidden = true; const b = $(INFO_BTN[id]); if (b) b.setAttribute('aria-pressed', 'false'); }
+function infoClose(id) { const el = $(id); if (!el) return; if (!el.hidden) unfocusPanel(id); el.hidden = true; const b = $(INFO_BTN[id]); if (b) b.setAttribute('aria-pressed', 'false'); }
 $('newsBtn').onclick = () => { if ($('newsPanel').hidden) infoOpen('newsPanel'); else infoClose('newsPanel'); };
 $('railAbout').onclick = () => { if ($('aboutPanel').hidden) infoOpen('aboutPanel'); else infoClose('aboutPanel'); };
 $('newsClose').onclick = () => infoClose('newsPanel'); $('aboutClose').onclick = () => infoClose('aboutPanel');
@@ -574,20 +627,40 @@ $('lpBadge').onclick = () => infoOpen('newsPanel', 'lp');
   [['website', 'Website'], ['linkedin', 'LinkedIn']].forEach(([k, label]) => { const u = safeUrl(PROFILE_LINKS[k]); if (!u) return; const a = document.createElement('a'); a.className = 'btn'; a.href = u; a.target = '_blank'; a.rel = 'noopener'; a.textContent = label; row.appendChild(a); });
   row.hidden = !row.children.length;
 })();
-// news can later be refreshed without republishing: a "news/feed" document, written by the owner, replaces the built-in list
-(async () => {
-  const db = await capUse('db');
-  if (!db) { try { const r = await fetch('news.json', { cache: 'no-store' }); if (!r.ok) return; const b = await r.json();
-      if (b && Array.isArray(b.items) && b.items.length) { const items = b.items.filter(n => n && typeof n.title === 'string').slice(0, 12).map(n => ({ d: String(n.d || '').slice(0, 40), id: String(n.id || '').slice(0, 40), title: n.title.slice(0, 160), text: String(n.text || '').slice(0, 600), src: String(n.src || '').slice(0, 80), url: String(n.url || ''), lm: String(n.lm || '') }));
-        NEWS = items; if (typeof b.stamp === 'string') NEWS_STAMP_NOW = b.stamp.slice(0, 120); if (!$('newsPanel').hidden) renderNews(); } } catch (e) {} return; }
+// city news: the built-in list, replaced by the "news/feed" document the owner edits here (claude.ai), or by news.json (website)
+const NEWSDB = { db: null, owner: false };
+function cleanNews(list) { return (list || []).filter(n => n && typeof n.title === 'string' && n.title.trim()).slice(0, 12).map(n => ({ d: String(n.d || '').slice(0, 40), id: String(n.id || '').slice(0, 40), title: String(n.title).slice(0, 160), text: String(n.text || '').slice(0, 600), src: String(n.src || '').slice(0, 80), url: /^https?:\/\//.test(String(n.url || '')) ? String(n.url) : '', lm: String(n.lm || '') })); }
+async function loadNews(manual) {
+  let items = null, stamp = null;
   try {
-    const d = await db.doc('news/feed').get(); const b = d.exists ? d.data() : null;
-    if (b && Array.isArray(b.items) && b.items.length) {
-      const items = b.items.filter(n => n && typeof n.title === 'string' && typeof n.text === 'string').slice(0, 12).map(n => ({ d: String(n.d || '').slice(0, 40), id: String(n.id || '').slice(0, 40), title: n.title.slice(0, 120), text: n.text.slice(0, 600), src: String(n.src || '').slice(0, 80), url: String(n.url || ''), lm: String(n.lm || '') }));
-      if (items.length) { NEWS = items; if (typeof b.stamp === 'string') NEWS_STAMP_NOW = b.stamp.slice(0, 80); if (!$('newsPanel').hidden) renderNews(); }
-    }
-  } catch (e) {}
+    if (NEWSDB.db) { const d = await NEWSDB.db.doc('news/feed').get(); const b = d.exists ? d.data() : null; if (b) { items = cleanNews(b.items); stamp = b.stamp; } }
+    else { const r = await fetch('news.json', { cache: 'no-store' }); if (r.ok) { const b = await r.json(); items = cleanNews(b && b.items); stamp = b && b.stamp; } }
+  } catch (e) { if (manual) toast(tr('The news could not be loaded. Please try again later.')); return; }
+  if (items && items.length) { NEWS = items.map(n => trObj(n, ['d', 'title', 'text', 'src'])); if (typeof stamp === 'string') NEWS_STAMP_NOW = tr(stamp.slice(0, 120)); }
+  if (!$('newsPanel').hidden) renderNews(); if (manual) toast(tr('The news is up to date.'));
+}
+(async () => {
+  NEWSDB.db = await capUse('db');
+  if (NEWSDB.db) { const u = await capUse('user'); if (u) { try { NEWSDB.owner = !!(await u.isOwner()); } catch (e) {} } }
+  $('newsEdit').hidden = !NEWSDB.owner; await loadNews(false);
 })();
+$('newsRefresh').onclick = () => loadNews(true);
+$('newsEdit').onclick = () => {
+  const wrap = document.createElement('div'); wrap.className = 'newsEditor';
+  const rows = NEWS.map(n => Object.assign({}, n)); const list = document.createElement('div'); wrap.appendChild(list);
+  const field = (row, key, label, multi) => { const l = document.createElement('label'); const s = document.createElement('span'); s.textContent = tr(label); l.appendChild(s);
+    const inp = document.createElement(multi ? 'textarea' : 'input'); if (!multi) inp.type = 'text'; inp.value = row[key] || ''; inp.oninput = () => { row[key] = inp.value; }; l.appendChild(inp); return l; };
+  const draw = () => { list.innerHTML = ''; rows.forEach((row, i) => { const box = document.createElement('fieldset'); const lg = document.createElement('legend'); lg.textContent = tr('News item') + ' ' + (i + 1); box.appendChild(lg);
+      [['d', 'Date'], ['title', 'Headline'], ['text', 'Text', true], ['src', 'Source'], ['url', 'Link']].forEach(f => box.appendChild(field(row, f[0], f[1], f[2])));
+      const del = document.createElement('button'); del.type = 'button'; del.className = 'btn ghost'; del.textContent = tr('Remove this item'); del.onclick = () => { rows.splice(i, 1); draw(); }; box.appendChild(del); list.appendChild(box); }); };
+  draw();
+  const add = document.createElement('button'); add.type = 'button'; add.className = 'btn ghost'; add.textContent = tr('Add a news item'); add.onclick = () => { if (rows.length >= 12) return; rows.unshift({ d: '', title: '', text: '', src: '', url: '' }); draw(); }; wrap.appendChild(add);
+  modal(tr('Edit the city news'), wrap, [{ label: tr('Save for everyone'), keep: true, fn: async () => {
+      const items = cleanNews(rows); if (!items.length) { toast(tr('Add at least one news item with a headline.')); return; }
+      const today = new Date().toLocaleDateString(LANG === 'de' ? 'de-DE' : 'en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+      try { await NEWSDB.db.doc('news/feed').set({ stamp: (LANG === 'de' ? 'Aktualisiert am ' : 'Updated on ') + today + '.', items }); closeModal(); await loadNews(false); toast(tr('The news is saved and visible to everyone.')); }
+      catch (e) { toast(tr('The news could not be saved.')); } } }, { label: tr('Cancel'), ghost: true }]);
+};
 
 $('trailBtn').onclick = () => { if (TR.on) stopTrail(); else startTrail(); };
 $('certBtn').onclick = certificate;
@@ -652,6 +725,7 @@ function loop(now) {
     controls.update();
   }
   skyMesh.position.copy(camera.position); skyU.time.value = now * 0.001; WIND.value = now * 0.001;
+  updateFlows(now);
   if (WATER_N) { WATER_N.offset.set((now * 0.000016) % 1, (now * 0.000009) % 1); WATER_N2.offset.set((-now * 0.000035) % 1, (now * 0.000041) % 1); }
   if (grade) { grade.uniforms.time.value = (now * 0.001) % 100; grade.uniforms.res.value.set(dom.width, dom.height); }
   render(dt);

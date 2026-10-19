@@ -6,6 +6,14 @@ function mbox(w, h, d) {
   return g;
 }
 function bx(x0, x1, y0, y1, z0, z1) { const g = mbox(Math.max(x1 - x0, 0.001), Math.max(y1 - y0, 0.001), Math.max(z1 - z0, 0.001)); g.translate((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2); return g; }
+// textured masonry, render and roofs get texture coordinates in metres on any shape, projected along its main axis
+const WORLD_UV_TEX = new Set(['render', 'stone', 'brick', 'brickBuff', 'concrete', 'paving', 'cobble', 'roofing', 'slate', 'tile', 'stains', 'gravel']);
+function worldUV(g) {
+  const p = g.attributes.position; if (!g.attributes.normal) g.computeVertexNormals(); const n = g.attributes.normal, uv = g.attributes.uv;
+  for (let i = 0; i < p.count; i++) { const ax = Math.abs(n.getX(i)), ay = Math.abs(n.getY(i)), az = Math.abs(n.getZ(i));
+    if (ay >= ax && ay >= az) uv.setXY(i, p.getX(i), p.getZ(i)); else if (ax >= az) uv.setXY(i, p.getZ(i), p.getY(i)); else uv.setXY(i, p.getX(i), p.getY(i)); }
+  uv.needsUpdate = true;
+}
 function clean(g) {
   let n = g.index ? g.toNonIndexed() : g;
   if (n !== g) g.dispose();
@@ -17,14 +25,14 @@ const unitBox = new THREE.BoxGeometry(1, 1, 1);
 class Kit {
   constructor() { this.g = {}; this.f = {}; this.part = ''; }
   key(m, t) { return m + '|' + (t || '') + '|' + (this.part || ''); }
-  geo(m, geo, t) { const k = this.key(m, t), c = clean(geo); if (!this.noGrass) this.ground(m, c); (this.g[k] || (this.g[k] = [])).push(c); }
+  geo(m, geo, t) { const keep = geo.userData && geo.userData.keepUV, k = this.key(m, t), c = clean(geo); const mt = MAT[m]; if (!keep && mt && mt.userData && WORLD_UV_TEX.has(mt.userData.tex)) worldUV(c); if (!this.noGrass) this.ground(m, c); (this.g[k] || (this.g[k] = [])).push(c); }
   ground(m, g) {
     g.computeBoundingBox(); const b = g.boundingBox; if (b.min.y > 0.35 || b.max.y < -0.05) return;
     if (m === 'lawn') { if (b.max.y - b.min.y < 0.6) (this.lawns || (this.lawns = [])).push([b.min.x, b.max.x, b.min.z, b.max.z, b.max.y]); return; }
     if (m.indexOf('leaf') === 0 || m === 'needle') return;
     (this.blocks || (this.blocks = [])).push([b.min.x, b.max.x, b.min.z, b.max.z, b.max.y]);
   }
-  box(m, x0, x1, y0, y1, z0, z1, t) { this.geo(m, bx(x0, x1, y0, y1, z0, z1), t); }
+  box(m, x0, x1, y0, y1, z0, z1, t) { const g = bx(x0, x1, y0, y1, z0, z1); g.userData.keepUV = true; this.geo(m, g, t); }
   paneX(m, x, y0, y1, z0, z1, t) { const g = new THREE.PlaneGeometry(z1 - z0, y1 - y0); g.rotateY(Math.PI / 2); g.translate(x, (y0 + y1) / 2, (z0 + z1) / 2); this.geo(m, g, t); }
   paneZ(m, z, y0, y1, x0, x1, t) { const g = new THREE.PlaneGeometry(x1 - x0, y1 - y0); g.translate((x0 + x1) / 2, (y0 + y1) / 2, z); this.geo(m, g, t); }
   fr(m, x0, x1, y0, y1, z0, z1, t) { const k = this.key(m, t); (this.f[k] || (this.f[k] = [])).push([(x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2, Math.abs(x1 - x0) || 0.001, Math.abs(y1 - y0) || 0.001, Math.abs(z1 - z0) || 0.001]); }

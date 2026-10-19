@@ -54,11 +54,11 @@ function realContext(k, lid, P, opt) {
   const inOwn = p => p[0] > own[0] && p[0] < own[1] && p[1] > own[2] && p[1] < own[3];
   // green areas, with trees in parks and woods
   const trees = [];
-  closedRings(decL('green')).forEach(o => { const q = o.p.map(loc); if (!near(q)) return; const cq = clipRect(q, P); if (cq.length < 3) return; flat(cq, o.c === 'F' ? 'lawnDry' in MAT ? 'lawnDry' : 'lawn' : 'lawn', 0.025);
+  closedRings(decL('green')).forEach(o => { const q = o.p.map(loc); if (!near(q)) return; const cq = clipRect(q, P); if (cq.length < 3) return; flat(cq, 'lawnReal', 0.025);
     if (o.c === 'f' || o.c === 'g' || o.c === 'c') { const ar = polyArea(cq), n = Math.min(40, Math.round(ar / (o.c === 'f' ? 160 : 420))); let xs = cq.map(p => p[0]), zs = cq.map(p => p[1]); const bx = [Math.min(...xs), Math.max(...xs), Math.min(...zs), Math.max(...zs)];
       for (let i = 0, tries = 0; i < n && tries < n * 6; tries++) { const x = bx[0] + rand() * (bx[1] - bx[0]), z = bx[2] + rand() * (bx[3] - bx[2]); if (!inPoly(x, z, cq) || inOwn([x, z])) continue; trees.push([x, z]); i++; } } });
   // water
-  addWater(k, closedRings(decL('water')).map(o => clipRect(o.p.map(loc), P)).filter(q => q.length > 2), 0.06, 'context');
+  if (!opt.noWater) addWater(k, closedRings(decL('water')).map(o => clipRect(o.p.map(loc), P)).filter(q => q.length > 2), 0.06, 'context');
   // streets at their real widths
   const W = { m: 16, p: 13, s: 11, t: 9, r: 7, w: 5 };
   ['streets', 'roads'].forEach(key => decL(key).forEach(o => { const q = o.p.map(loc); if (!near(q)) return; const w = W[o.c] || 7;
@@ -136,6 +136,50 @@ function ubaPlan() {
 }
 
 function pedimentU(k, m, x0, x1, y, h, z, depth, tag) { const sh = new THREE.Shape(), w = x1 - x0; sh.moveTo(-w / 2, 0); sh.lineTo(w / 2, 0); sh.lineTo(0, h); sh.closePath(); const g = new THREE.ExtrudeGeometry(sh, { depth: depth || 0.6, bevelEnabled: false }); g.translate((x0 + x1) / 2, y, z); k.geo(m, g, tag); }
+
+/* a moving river surface: waves travelling downstream and ripples drifting with the current, computed each frame */
+const FLOWS = [];
+function flowWater(parent, x0, x1, z0, z1, y, dx, dz, speed) {
+  const w = x1 - x0, d = z1 - z0, g = new THREE.PlaneGeometry(w, d, Math.min(120, Math.max(8, Math.round(w / 1.4))), Math.min(120, Math.max(8, Math.round(d / 1.4))));
+  g.rotateX(-Math.PI / 2); g.translate((x0 + x1) / 2, y, (z0 + z1) / 2);
+  const m = MAT.water.clone(), n1 = WATER_N.clone(), n2 = WATER_N2.clone(); n1.needsUpdate = n2.needsUpdate = true; m.normalMap = n1; m.clearcoatNormalMap = n2;
+  const mesh = new THREE.Mesh(g, m); mesh.receiveShadow = true; mesh.renderOrder = 1; mesh.userData.noAO = true; mesh.userData.flow = true; mesh.frustumCulled = false; noAO.add(mesh); parent.add(mesh);
+  const f = { n1, n2, dir: new THREE.Vector2(dx, dz).normalize(), speed: speed || 1, mesh, y, tick: 0 }; FLOWS.push(f); return mesh;
+}
+function updateFlows(now) {
+  const t = now * 0.001;
+  for (let i = FLOWS.length - 1; i >= 0; i--) { const f = FLOWS[i]; if (!f.mesh.geometry || !f.mesh.geometry.attributes.position) { FLOWS.splice(i, 1); continue; }
+    let root = f.mesh; for (let d = 0; d < 50 && root.parent; d++) root = root.parent; if (!cur || root !== cur.scene) continue;
+    const o = t * 0.03 * f.speed; f.n1.offset.set(-f.dir.x * o * 1.6, -f.dir.y * o * 1.6); f.n2.offset.set(-f.dir.x * o * 3.1 + 0.3, -f.dir.y * o * 3.1);
+    const p = f.mesh.geometry.attributes.position, ux = f.dir.x, uz = f.dir.y;
+    const cnt = p.count | 0; for (let v = 0; v < cnt; v++) { const x = p.getX(v), z = p.getZ(v), a = x * ux + z * uz, b = -x * uz + z * ux;
+      p.setY(v, f.y + 0.09 * Math.sin(a * 0.45 - t * 1.9 * f.speed) + 0.05 * Math.sin(a * 1.2 + b * 0.6 - t * 2.9 * f.speed) + 0.03 * Math.sin(b * 1.7 + a * 0.3 - t * 1.6)); }
+    p.needsUpdate = true; if ((f.tick++ & 1) === 0) f.mesh.geometry.computeVertexNormals(); }
+}
+
+/* the real landscape around a landmark: keep the landmark itself (its tagged parts and period variants, plus a margin),
+   drop the invented surroundings, lay a neutral ground and add the real streets, neighbours, green areas and water */
+const LAND_KEEP = new Set(['water', 'sand']);
+function realLandscape(k, lid, P, opt) {
+  opt = opt || {}; const margin = opt.margin == null ? 8 : opt.margin;
+  const own = key => { const [m, t, pt] = key.split('|'); return (t && t !== 'context') || !!pt; };
+  let x0 = 1e9, x1 = -1e9, z0 = 1e9, z1 = -1e9;
+  const grow = (a, b, c, d) => { x0 = Math.min(x0, a); x1 = Math.max(x1, b); z0 = Math.min(z0, c); z1 = Math.max(z1, d); };
+  Object.keys(k.g).forEach(key => { if (!own(key)) return; k.g[key].forEach(g => { g.computeBoundingBox(); const b = g.boundingBox; grow(b.min.x, b.max.x, b.min.z, b.max.z); }); });
+  Object.keys(k.f).forEach(key => { if (!own(key)) return; k.f[key].forEach(q => grow(q[0] - q[3] / 2, q[0] + q[3] / 2, q[2] - q[5] / 2, q[2] + q[5] / 2)); });
+  if (x0 > x1) { x0 = -20; x1 = 20; z0 = -20; z1 = 20; }
+  const Z = [Math.max(P.x0, x0 - margin), Math.min(P.x1, x1 + margin), Math.max(P.z0, z0 - margin), Math.min(P.z1, z1 + margin)];
+  const inZ = (x, z) => x >= Z[0] && x <= Z[1] && z >= Z[2] && z <= Z[3], PA = (P.x1 - P.x0) * (P.z1 - P.z0);
+  Object.keys(k.g).forEach(key => { if (own(key) || LAND_KEEP.has(key.split('|')[0])) return;
+    k.g[key] = k.g[key].filter(g => { g.computeBoundingBox(); const b = g.boundingBox, area = (b.max.x - b.min.x) * (b.max.z - b.min.z);
+      if (area > PA * 0.45 && b.max.y < 0.35) return false;   // the old ground sheet
+      return inZ((b.min.x + b.max.x) / 2, (b.min.z + b.max.z) / 2); });
+    if (!k.g[key].length) delete k.g[key]; });
+  Object.keys(k.f).forEach(key => { if (own(key)) return; k.f[key] = k.f[key].filter(q => inZ(q[0], q[2])); if (!k.f[key].length) delete k.f[key]; });
+  if (k.lawns) k.lawns = k.lawns.filter(l => (l[1] - l[0]) * (l[3] - l[2]) < PA * 0.45 && inZ((l[0] + l[1]) / 2, (l[2] + l[3]) / 2));
+  k.box('ground', P.x0, P.x1, -0.16, -0.03, P.z0, P.z1);
+  realContext(k, lid, P, { own: Z, noWater: opt.noWater });
+}
 
 /* real water inside a scene: OpenStreetMap lakes and ponds around the landmark, turned into the scene's frame and clipped to its ground */
 let WATER_MASK = null;

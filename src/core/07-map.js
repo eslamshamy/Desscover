@@ -68,7 +68,7 @@ function drawMap() {
   g.save(); g.translate(sx(1420), sz(-700)); g.rotate(-1.5); g.fillText('Mulde', 0, 0); g.restore(); g.save(); g.translate(sx(2500), sz(3500)); g.rotate(-1.0); g.fillText('Mulde', 0, 0); g.restore();
   g.fillText('Wörlitzer See', sx(12700), sz(-1010));
   g.fillStyle = '#6a7350'; g.font = '500 ' + Math.round(sl(48)) + 'px Jost, Futura, Arial, sans-serif'; g.fillText('Stadtpark', sx(565), sz(880));
-  g.font = '500 ' + Math.round(sl(90)) + 'px Jost, Futura, Arial, sans-serif'; [['Georgium', -250, -1300], ['Tiergarten', 1700, 1500], ['Mosigkauer Heide', -5600, 5100], ['Wörlitzer Park', 13450, -1250], ['Mosigkau', -5800, 3550], ['Wörlitz', 12780, -120], ['Roßlau', 300, -3700], ['Kühnau', -2900, -350]].forEach(t => g.fillText(t[0], sx(t[1]), sz(t[2])));
+  g.font = '500 ' + Math.round(sl(90)) + 'px Jost, Futura, Arial, sans-serif'; [['Tierpark', -250, -1300], ['Tiergarten', 1700, 1500], ['Mosigkauer Heide', -5600, 5100], ['Wörlitzer Park', 13450, -1250], ['Mosigkau', -5800, 3550], ['Wörlitz', 12780, -120], ['Roßlau', 300, -3700], ['Kühnau', -2900, -350]].forEach(t => g.fillText(t[0], sx(t[1]), sz(t[2])));
   g.font = '500 ' + Math.round(sl(48)) + 'px Jost, Futura, Arial, sans-serif';
   g.fillStyle = '#6e6a63'; g.font = '500 ' + Math.round(sl(36)) + 'px Jost, Futura, Arial, sans-serif';
   if (false) [].forEach(r => { if (!r.n) return; const a = r.p[0], b = r.p[1]; const mx = (a[0] + b[0]) / 2, mz = (a[1] + b[1]) / 2; g.save(); g.translate(sx(mx), sz(mz)); let ang = Math.atan2(sz(b[1]) - sz(a[1]), sx(b[0]) - sx(a[0])); if (ang > Math.PI / 2) ang -= Math.PI; if (ang < -Math.PI / 2) ang += Math.PI; g.rotate(ang); g.fillText(r.n, 0, -sl(22)); g.restore(); });
@@ -97,7 +97,7 @@ function buildMap() {
   waterRibbon(scene, ELBE, 16, 0.14); waterRibbon(scene, MULDE, 7, 0.13);
   const tokens = {};
   LMS.forEach(l => {
-    const g = token(l.id); const s = MS * 1.6; g.scale.set(s, s, s); if (ALIGN[l.id]) { g.rotation.y = ALIGN[l.id][0] * D2R; if (ALIGN[l.id][1]) g.scale.x = -s; }
+    const g = token(l.id); const s = MS * 1.6 * (TOKEN_SCALE[l.id] || 1); g.scale.set(s, s, s); if (ALIGN[l.id]) { g.rotation.y = ALIGN[l.id][0] * D2R; if (ALIGN[l.id][1]) g.scale.x = -s; }
     g.position.set(l.x * MS, 0.05, l.z * MS); scene.add(g); registerNoAO(g); tokens[l.id] = g;
     const ring = new THREE.Mesh(new THREE.RingGeometry(9, 10.5, 48).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0xc8372d, transparent: true, opacity: 0, depthWrite: false }));
     ring.position.set(l.x * MS, 0.2, l.z * MS); ring.userData.noAO = true; noAO.add(ring); scene.add(ring); g.userData.ring = ring;
@@ -188,7 +188,8 @@ function closeFact() { factIdx = -1; $('card').hidden = true; if (cur) cur.facts
 $('prevFact').onclick = () => openFact(factIdx - 1); $('nextFact').onclick = () => openFact(factIdx + 1); $('closeCard').onclick = closeFact;
 $('backBtn').onclick = () => go('map');
 // real-world orientation of each model (degrees anticlockwise from its modelling axes) and whether it is mirrored, from OpenStreetMap footprints
-const ALIGN = { hbf: [79.5, false], bauhaus: [22.2, false], museum: [88.5, false], rathaus: [90.0, true], theater: [-63.4, false], lyzeum: [159.2, true], meister: [-4.0, false], johannbau: [93.3, false], naturkunde: [0, false], yhouses: [0, false], bridge: [-84.0, false], uba: [0, false], raucher: [-80.7, false], hkw: [0.0, false], mausoleum: [116.0, false], georgium: [-156.5, false], junkers: [85.3, false], luisium: [-87.4, false], mosigkau: [0.0, false], woerlitz: [-34.2, false], kornhaus: [-26.8, false], rcenter: [0, false], dcenter: [0, false], petri: [0, false], marien: [6.9, false], propstei: [10.6, false] };
+const TOKEN_SCALE = { rcenter: 0.6 };   // map tokens drawn smaller than the rest, so they do not cover their neighbours
+const ALIGN = { hbf: [79.5, false], bauhaus: [22.2, false], museum: [88.5, false], rathaus: [90.0, true], theater: [-63.4, false], lyzeum: [159.2, true], meister: [-4.0, false], johannbau: [93.3, false], naturkunde: [0, false], yhouses: [0, false], bridge: [-84.0, false], uba: [0, false], raucher: [-80.7, false], hkw: [0.0, false], mausoleum: [116.0, false], georgium: [-156.5, false], junkers: [85.3, false], luisium: [-87.4, false], mosigkau: [0.0, false], woerlitz: [-34.2, false], kornhaus: [-26.8, false], rcenter: [93, false], dcenter: [0, false], petri: [0, false], marien: [6.9, false], propstei: [10.6, false] };
 const UPV = new THREE.Vector3(0, 1, 0);
 function toW(v) { if (cur && cur.mirror) v.x = -v.x; if (cur && cur.rotY) v.applyAxisAngle(UPV, cur.rotY); return v; }
 function fromW(v) { if (cur && cur.rotY) v.applyAxisAngle(UPV, -cur.rotY); if (cur && cur.mirror) v.x = -v.x; return v; }
