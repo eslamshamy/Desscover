@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>DESSCOVER beta: explore the landmarks of Dessau</title>
-<meta name="description" content="DESSCOVER beta: a map of Dessau with twenty-six landmarks. Open each one as a 3D model, walk around it in the real Dessau sunlight and click to discover its history.">
+<title>Digital Dessau beta: explore the landmarks of Dessau</title>
+<meta name="description" content="Digital Dessau beta: a map of Dessau with twenty-six landmarks. Open each one as a 3D model, walk around it in the real Dessau sunlight and click to discover its history.">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -270,6 +270,7 @@ body.immersive .ui:not(#toast):not(#walkHud),body.immersive #sideRail,body.immer
 @keyframes tourPulse{50%{outline-color:transparent}}
 @media (prefers-reduced-motion:reduce){.tourHL{animation:none}}
 body.immersive #tour{display:none!important}
+.weather{display:flex;align-items:center;gap:8px;margin:2px 0 8px;font-size:14px;color:var(--muted)}.weather .wi{font-size:20px;line-height:1}.weather b{color:var(--ink);font-weight:500}
 /* phones: a compact top bar, bottom sheets for the lists, the 3D view in between */
 @media (max-width:700px){
   .toolbar{top:calc(8px + env(safe-area-inset-top,0px));bottom:auto;right:8px;gap:4px}
@@ -316,8 +317,9 @@ body.immersive #tour{display:none!important}
   <!-- map mode -->
   <section class="ui panel intro" id="intro" aria-label="Introduction">
     <div class="mark" aria-hidden="true"><i class="m1"></i><i class="m2"></i><i class="m3"></i></div>
-    <h1>DESSCOVER <span class="h1sub">beta</span></h1>
-    <p class="tagline">Welcome to The Digital Dessau.</p>
+    <h1>Digital Dessau <span class="h1sub">beta</span></h1>
+    <p class="tagline">Welcome to the Bauhaus city.</p>
+    <p class="weather" id="weather" hidden aria-live="polite"></p>
     <button class="lpBadge" type="button" id="lpBadge" title="Read about it in the news section"><span class="lpTop">Best in Travel 2027</span><span class="lpBot">Lonely Planet · one of 25 places to visit</span></button>
     <p>Twenty-six landmarks, from a Renaissance palace wing to two shopping centres, across the city and out to Wörlitz. Choose one on the map to open it in 3D, then click around it to uncover its history. Zoom out to see Mosigkau and Wörlitz.</p>
     <p class="prog" id="progressLine"></p>
@@ -327,6 +329,7 @@ body.immersive #tour{display:none!important}
       <button class="btn ghost" type="button" id="resetProg">Reset</button>
     </div>
     <div class="row">
+      <button class="btn ghost" type="button" id="cityBtn" aria-pressed="false">About the city</button>
       <button class="btn ghost" type="button" id="newsBtn" aria-pressed="false">City news</button>
     </div>
   </section>
@@ -335,6 +338,17 @@ body.immersive #tour{display:none!important}
     <p class="muted" id="newsStamp"></p>
     <ol class="newsList" id="newsList"></ol>
     <div class="row"><button class="btn ghost" type="button" id="newsRefresh">Refresh</button><button class="btn ghost" type="button" id="newsEdit" hidden>Edit the news</button><button class="btn" type="button" id="newsClose">Close</button></div>
+  </section>
+  <section class="ui panel infoPanel" id="cityPanel" hidden aria-label="About the city">
+    <h2>About the city</h2>
+    <p>Dessau-Roßlau, a twin city on the Elbe and the Mulde, holds four UNESCO World Heritage listings, more than almost any other town in Germany.</p>
+    <p><b>The Bauhaus.</b> From 1925 to 1932 the Bauhaus school made Dessau a centre of modernism. Architects such as Walter Gropius and Ludwig Mies van der Rohe and artists such as Wassily Kandinsky and László Moholy-Nagy worked here.</p>
+    <p><b>The Garden Realm Dessau-Wörlitz.</b> Palaces, parks, gardens and lakes set in a cultivated landscape of about 142 km², a World Heritage site since 2000.</p>
+    <p><b>The Middle Elbe Biosphere Reserve.</b> Some 126,000 hectares around the city, one of the last near-natural river landscapes in Europe.</p>
+    <p><b>Luther’s lectures on Romans.</b> A student’s notes of Martin Luther’s lectures of 1515–16, Documentary Heritage since 2016, are kept in the Anhalt State Library in Dessau.</p>
+    <p>Lonely Planet named Dessau one of its best places to visit in 2027. The tourist information offices are at Ratsgasse 11 in Dessau and Hauptstraße 11 in Roßlau.</p>
+    <p class="muted">Source and travel tips: <a href="https://www.visitdessau.com/en/" target="_blank" rel="noopener">visitdessau.com</a></p>
+    <div class="row"><button class="btn ghost" type="button" id="cityClose">Close</button></div>
   </section>
   <section class="ui panel infoPanel" id="passportPanel" hidden aria-label="My passport">
     <h2>My passport</h2>
@@ -345,7 +359,7 @@ body.immersive #tour{display:none!important}
   </section>
   <section class="ui panel infoPanel" id="aboutPanel" hidden aria-label="About this project">
     <h2>About</h2>
-    <p><b>DESSCOVER beta</b> is developed by <b>Eslam ElShamy</b>, an architect and designer based in Dessau.</p>
+    <p><b>Digital Dessau beta</b> is developed by <b>Eslam ElShamy</b>, an architect and designer based in Dessau.</p>
     <p>It brings the city's landmarks together on one map, as 3D models you can explore across time, walk through and redesign, with stories drawn from the sources cited on every card. The models are reconstructions from published dimensions, photographs and descriptions, so some details are approximate.</p>
     <div class="row" id="aboutLinks"></div>
     <p class="muted">Built with three.js. Base map: © OpenStreetMap contributors (ODbL). Models drawn for this project.</p>
@@ -354,7 +368,6 @@ body.immersive #tour{display:none!important}
   <nav class="ui panel lmlist" id="lmlist" aria-label="Landmarks"><p class="lbl">landmarks</p><div id="lmButtons"></div></nav>
   <nav id="sideRail" aria-label="Passport and about">
   <button type="button" id="railPassport" aria-pressed="false" title="My passport" aria-label="My passport: your stamps and stories"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><rect x="5" y="2.5" width="14" height="19" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="10.5" r="3.4" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8.5 16.5h7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
-  <button type="button" id="railHelp" title="How it works" aria-label="How it works: play the short tour"><span class="ri" style="font-style:normal">?</span></button>
   <button type="button" id="railAbout" aria-pressed="false" title="About" aria-label="About this project"><span class="ri">i</span></button>
 </nav>
 <button type="button" id="compass" title="Compass: click to face north" aria-label="Compass, click to turn the view to face north"><span class="rose" id="compassRose"><span class="cn">N</span><i class="nN"></i><i class="nS"></i></span></button>

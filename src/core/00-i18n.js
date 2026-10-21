@@ -65,7 +65,7 @@ function trNode(n) {
 function trTree(root) { trNode(root); if (!root.querySelectorAll && root.nodeType !== 1) return; const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT); let n; while ((n = w.nextNode())) trNode(n); }
 if (LANG === 'de') {
   document.title = tr(document.title);
-  const md = document.querySelector('meta[name="description"]'); if (md) md.setAttribute('content', 'DESSCOVER beta: eine Karte von Dessau mit sechsundzwanzig Sehenswürdigkeiten. Öffnen Sie jede als 3D-Modell, gehen Sie im echten Dessauer Sonnenlicht herum und klicken Sie sich durch ihre Geschichte.');
+  const md = document.querySelector('meta[name="description"]'); if (md) md.setAttribute('content', 'Digital Dessau beta: eine Karte von Dessau mit sechsundzwanzig Sehenswürdigkeiten. Öffnen Sie jede als 3D-Modell, gehen Sie im echten Dessauer Sonnenlicht herum und klicken Sie sich durch ihre Geschichte.');
   trTree(document.body);
   new MutationObserver(ms => ms.forEach(m => { if (m.type === 'childList') m.addedNodes.forEach(trTree); else trNode(m.target); }))
     .observe(document.body, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: TR_ATTRS });

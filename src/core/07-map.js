@@ -147,7 +147,7 @@ function saveProg() { try { localStorage.setItem(PKEY, JSON.stringify(PROG)); } 
 const seen = PROG.seen;
 function showMapUI(on) {
   ['intro', 'lmlist'].forEach(id => { $(id).hidden = !on; }); labels.hidden = !on;
-  if (!on && typeof infoClose === 'function') { infoClose('newsPanel'); infoClose('aboutPanel'); infoClose('passportPanel'); }
+  if (!on && typeof infoClose === 'function') { infoClose('newsPanel'); infoClose('aboutPanel'); infoClose('passportPanel'); infoClose('cityPanel'); }
   ['bhead', 'bpanel'].forEach(id => { $(id).hidden = on; }); markers.hidden = on;
   if (on) { $('card').hidden = true; $('people').hidden = true; $('dressTray').hidden = true; $('walkHud').hidden = true; }
 }

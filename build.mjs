@@ -1,4 +1,4 @@
-// Builds DESSCOVER online from src/ into one self-contained page.
+// Builds Digital Dessau beta from src/ into one self-contained page.
 //   node build.mjs            -> index.html (the website) and dist/desscover.html (the same page, for claude.ai)
 // Edit a landmark in src/landmarks/<id>.js, shared code in src/core/, then run the build again.
 import { readFile, writeFile, mkdir } from 'node:fs/promises';

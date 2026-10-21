@@ -169,7 +169,7 @@ function drawCertificate(name) {
     g.fillStyle = '#16171a'; g.font = '500 ' + F(17); g.fillText(l.name, cx, cy + 72); g.textAlign = 'left';
   });
   g.fillStyle = '#5b6064'; g.font = '400 ' + F(24); g.fillText(new Date().toLocaleDateString(LANG === 'de' ? 'de-DE' : 'en-GB', { day: 'numeric', month: 'long', year: 'numeric' }), 92, H - 60);
-  g.textAlign = 'right'; g.fillText('DESSCOVER beta', W - 92, H - 60); g.textAlign = 'left';
+  g.textAlign = 'right'; g.fillText('Digital Dessau beta', W - 92, H - 60); g.textAlign = 'left';
   canvasOut(c, 'desscover-certificate.png');
 }
 
@@ -191,7 +191,7 @@ function postcard(caption) {
     g.font = '400 ' + F(30); g.fillStyle = '#5b6064';
     const era = cur && cur.eras && cur.eraIdx != null ? cur.eras[cur.eraIdx].year + ', ' : '';
     g.fillText(typeof caption === 'string' ? caption : (lm ? lm.label + ', ' + era : tr('The map of Dessau') + ', ') + fmt(timeNow) + (LANG === 'de' ? ' am ' + { dec: '4. Dezember', mar: '21. März', jun: '21. Juni' }[dateKey] : ' on ' + { dec: '4 December', mar: '21 March', jun: '21 June' }[dateKey]), 60, 1190);
-    g.textAlign = 'right'; g.font = '500 ' + F(28); g.fillStyle = '#16171a'; g.fillText('DESSCOVER beta', W - 60, 1135); g.textAlign = 'left';
+    g.textAlign = 'right'; g.font = '500 ' + F(28); g.fillStyle = '#16171a'; g.fillText('Digital Dessau beta', W - 60, 1135); g.textAlign = 'left';
     canvasOut(c, 'desscover-postcard' + (lm ? '-' + lm.id : '') + '.png');
   };
   img.src = shot;
@@ -415,7 +415,7 @@ function uipCollapse(el, on, temp) {
 // closing a panel with its × button
 function uipClose(el) {
   const id = el.id; unfocusPanel(id);
-  if (id === 'newsPanel' || id === 'aboutPanel' || id === 'passportPanel') infoClose(id); else if (id === 'card') closeFact(); else if (id === 'dressTray') closeDress();
+  if (id === 'newsPanel' || id === 'aboutPanel' || id === 'passportPanel' || id === 'cityPanel') infoClose(id); else if (id === 'card') closeFact(); else if (id === 'dressTray') closeDress();
   else if (id === 'byoTray') byoClose(); else if (id === 'walkHud') stopWalk(); else el.hidden = true;
 }
 // opening a window folds the other open panels for a while; closing it unfolds them again
@@ -427,7 +427,7 @@ function focusPanel(id) {
 }
 function unfocusPanel(id) { if (!FOCUS.id || (id && FOCUS.id !== id)) return; FOCUS.saved.forEach(el => { if (!el.hidden) uipCollapse(el, false, true); }); FOCUS.id = null; FOCUS.saved = []; }
 function uipFront(el) { if (UIP.top && UIP.top !== el) UIP.top.style.zIndex = ''; el.style.zIndex = 8; UIP.top = el; }
-[['newsPanel', 'City news'], ['aboutPanel', 'About'], ['passportPanel', 'My passport'], ['intro', 'DESSCOVER beta'], ['lmlist', 'Landmarks'], ['bhead', 'Building'], ['bpanel', 'Tools and stories'], ['card', 'Story'], ['dressTray', 'Redesign'], ['walkHud', 'Walk'], ['byoTray', 'Build your own house']].forEach(([id, name]) => {
+[['newsPanel', 'City news'], ['cityPanel', 'About the city'], ['aboutPanel', 'About'], ['passportPanel', 'My passport'], ['intro', 'Digital Dessau beta'], ['lmlist', 'Landmarks'], ['bhead', 'Building'], ['bpanel', 'Tools and stories'], ['card', 'Story'], ['dressTray', 'Redesign'], ['walkHud', 'Walk'], ['byoTray', 'Build your own house']].forEach(([id, name]) => {
   const el = $(id); if (!el) return;
   const tab = document.createElement('div'); tab.className = 'ptab';
   const grip = document.createElement('button'); grip.type = 'button'; grip.className = 'grip' + (id === 'intro' ? ' keepcase' : ''); grip.title = 'Drag to move. Double-click to put it back.';
@@ -466,9 +466,9 @@ function setImmersive(on) {
 $('immBtn').onclick = () => setImmersive(true); $('immExit').onclick = () => setImmersive(false); $('immBack').onclick = () => go('map');
 document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement && document.body.classList.contains('immersive')) setImmersive(false); });
 window.addEventListener('keydown', e => { if (e.key === 'Escape' && document.body.classList.contains('immersive') && !WALK.on) setImmersive(false); });
-// a short tour on the first visit; the ? icon plays it again
+// a short tour, shown once on the first visit
 const TOUR = [
-  { t: 'Welcome to DESSCOVER beta', x: 'Explore twenty-six landmarks of Dessau in 3D, from the Bauhaus to Wörlitz.' },
+  { t: 'Welcome to Digital Dessau beta', x: 'Explore twenty-six landmarks of Dessau in 3D, from the Bauhaus to Wörlitz.' },
   { t: 'Pick a landmark', x: 'Click a numbered pin on the map or a name in this list to open a landmark in 3D.', el: 'lmlist' },
   { t: 'Uncover its stories', x: 'Inside, click the numbered circles on the building to read its stories, and use the year buttons to travel through time.' },
   { t: 'Collect stamps', x: 'Once you have seen every story, one question pops up. Answer it to earn a stamp in your passport.', el: 'railPassport' },
@@ -483,9 +483,28 @@ function tourShow(i) {
   if (s.el && $(s.el) && !$(s.el).hidden) $(s.el).classList.add('tourHL'); $('tour').hidden = false; $('tourNext').focus();
 }
 $('tourNext').onclick = () => tourShow(tourStep + 1); $('tourBack').onclick = () => tourShow(tourStep - 1); $('tourSkip').onclick = () => tourShow(-1);
-$('railHelp').onclick = () => { if (curId !== 'map') go('map'); tourShow(0); };
 window.addEventListener('keydown', e => { if (e.key === 'Escape' && tourStep >= 0) tourShow(-1); });
 try { if (!localStorage.getItem(TOUR_KEY)) setTimeout(() => { if (curId === 'map') tourShow(0); }, 1600); } catch (e) {}
+// live weather in Dessau from Open-Meteo (no key needed), refreshed every 15 minutes; hidden where it cannot be loaded
+const WX = { t: 0, timer: null };
+const WX_CODES = [[[0], '☀', 'clear sky'], [[1], '🌤', 'mainly clear'], [[2], '⛅', 'partly cloudy'], [[3], '☁', 'overcast'], [[45, 48], '🌫', 'fog'],
+  [[51, 53, 55, 56, 57], '🌦', 'drizzle'], [[61, 63, 65, 66, 67, 80, 81, 82], '🌧', 'rain'], [[71, 73, 75, 77, 85, 86], '🌨', 'snow'], [[95, 96, 99], '⛈', 'thunderstorm']];
+async function loadWeather() {
+  try {
+    const r = await fetch('https://api.open-meteo.com/v1/forecast?latitude=51.835&longitude=12.243&current=temperature_2m,apparent_temperature,weather_code,wind_speed_10m,is_day&timezone=Europe%2FBerlin', { cache: 'no-store' });
+    if (!r.ok) throw new Error('weather ' + r.status); const c = (await r.json()).current; if (!c || typeof c.temperature_2m !== 'number') throw new Error('no data');
+    const w = WX_CODES.find(x => x[0].includes(c.weather_code)) || [[], '·', ''];
+    const icon = c.is_day === 0 && (c.weather_code === 0 || c.weather_code === 1) ? '☾' : w[1];
+    const el = $('weather'); el.textContent = '';
+    const ic = document.createElement('span'); ic.className = 'wi'; ic.setAttribute('aria-hidden', 'true'); ic.textContent = icon; el.appendChild(ic);
+    const tx = document.createElement('span'); const lead = document.createElement('b'); lead.textContent = tr('Dessau now') + ': '; tx.appendChild(lead);
+    const num = v => Math.round(v).toLocaleString(LANG === 'de' ? 'de-DE' : 'en-GB');
+    tx.appendChild(document.createTextNode(num(c.temperature_2m) + ' °C, ' + tr(w[2]) + (typeof c.wind_speed_10m === 'number' ? ' · ' + tr('wind') + ' ' + num(c.wind_speed_10m) + ' km/h' : '')));
+    el.appendChild(tx); el.title = tr('Live weather from Open-Meteo, updated every 15 minutes'); el.hidden = false; WX.t = Date.now();
+  } catch (e) { if (!WX.t) $('weather').hidden = true; }
+}
+loadWeather(); WX.timer = setInterval(loadWeather, 15 * 60 * 1000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden && Date.now() - WX.t > 15 * 60 * 1000) loadWeather(); });
 const THEME_KEY = 'dessau-theme';
 function effectiveTheme() { const t = document.documentElement.dataset.theme; return t || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'); }
 function applyTheme(t) { if (t) document.documentElement.dataset.theme = t; else delete document.documentElement.dataset.theme; const e = effectiveTheme(), b = $('themeBtn'); if (b) { b.textContent = e === 'dark' ? '☀' : '☾'; b.title = e === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'; b.setAttribute('aria-label', b.title); } }
@@ -608,7 +627,8 @@ function renderNews(hot) {
     li.appendChild(na); ol.appendChild(li);
   });
 }
-const INFO_BTN = { newsPanel: 'newsBtn', aboutPanel: 'railAbout', passportPanel: 'railPassport' };
+const INFO_BTN = { newsPanel: 'newsBtn', aboutPanel: 'railAbout', passportPanel: 'railPassport', cityPanel: 'cityBtn' };
+$('cityBtn').onclick = () => { if ($('cityPanel').hidden) infoOpen('cityPanel'); else infoClose('cityPanel'); }; $('cityClose').onclick = () => infoClose('cityPanel');
 function infoOpen(id, hot) {
   setTimeout(() => focusPanel(id), 0);
   Object.keys(INFO_BTN).forEach(o => { if (o !== id) infoClose(o); });
